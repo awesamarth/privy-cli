@@ -11,7 +11,7 @@ Errors go to stderr and expose safe `code`, `message`, and available `status`, `
 | Usage/unknown field/type error | Read the exact command schema and compare local inputs. Unknown names are intentionally omitted because they can contain credentials. Correct input; do not guess endpoint paths. |
 | Protection/confirmation/production refusal | Check target and user's actual authorization. Do not remove protection or add risk flags simply to force success. |
 | Missing external secret, DNS ownership, owner authorization or feature eligibility | State the prerequisite and stop. Do not fabricate credentials, automate challenges, submit unrelated approval requests or change billing. |
-| Expired/rejected access401 | Inspect `auth status`; expired access does not establish invalid refresh. A deliberate `auth refresh` may recover it. Do not repeatedly log in/import/replace/logout shared sessions. |
+| Expired/rejected access401 | Saved credentials may still be renewable. `auth login` first attempts one renewal and remote verification; `auth refresh` does the same explicitly. `auth status --remote` stays read-only and recommends a profile-qualified next action. Do not infer logout from expired access or repeatedly renew/import/replace/logout shared sessions. |
 | 5xx/520, timeout, cancellation or unreadable successful response | Outcome may be uncertain. Inspect the exact resource/collection, including current permissions and pagination. A server/gateway failure alone does not prove bad credentials or a changed API contract. |
 | Acknowledged write, `verified:false`, pending review or verification failure | Report incomplete verification, not rollback or completion. Read current state. Do not repeat a state-changing operation just to get a verified response. |
 | Local vault/index/context cleanup failure after remote success | Repair the reported local reference/context. Do not recreate or repeat remote deletion. |
@@ -19,6 +19,8 @@ Errors go to stderr and expose safe `code`, `message`, and available `status`, `
 `retryAfterSeconds` does not grant permission to blindly retry a write. Be especially careful with session refresh: the server may have rotated credentials even if the response was lost.
 
 ## Common partial-success cases
+
+- **Session recovery:** `LOGIN_REQUIRED` means renewal explicitly failed; fresh sign-in requires deliberate `auth login --replace` and human input. Network/5xx/ambiguous renewal errors stop without that fallback. `SESSION_ACCESS_UNVERIFIED` means renewal returned but remote verification failed; any saved renewal remains. Inspect status before another action, not another automatic refresh.
 
 - **App create:** list apps in the intended account and inspect exact-name matches before another create. Names may not be unique. Do not guess an app ID; if matches are ambiguous, ask. A later config failure does not erase an already-created app.
 - **JWT initial setup:** `JWT_SETUP_PARTIAL_OR_UNCERTAIN` can mean app auth enabled but verifier configuration failed. Read `config custom-jwt get`; explicitly correct or disable if authorized. No rollback occurred.

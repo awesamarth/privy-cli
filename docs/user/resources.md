@@ -13,7 +13,18 @@ privy key-quorums list
 privy cli search "organizations"
 ```
 
-Use exact IDs, returned cursors and resource-specific filters from schema. Most lists are bounded to one page by default; `--all --max-pages 5` is explicit bounded traversal, not a guarantee of completeness. Preserve `truncated` and `next_cursor` in your report when relevant. User records/export contents may be personal data despite credential redaction.
+Use exact IDs, returned cursors and resource-specific filters from schema. Most lists are bounded to one page by default; `--all --max-pages 5` is explicit bounded traversal, not a guarantee of completeness. Preserve `truncated` and `next_cursor` in your report when relevant.
+
+For cursor-paginated lists, `pagination.requested_limit`, `page_counts`, `returned_page_counts` and `end_reason` show what was actually fetched. `page_counts` counts rows retained per page; `returned_page_counts` also exposes lookahead rows for endpoints that require display-page slicing. `has_more` is the backward-compatible **continuation-available** indicator, not a guarantee of another nonempty page. A terminal empty page can be legitimate. Never infer an empty page merely from total count and request count, and never stop early solely because a page is shorter than requested.
+
+User lists default to20 per request. `--all` follows cursors with the current command's page size; it does not inherit a previous invocation's `--limit 100`. To compare behavior, keep app/filter/limit identical:
+
+```sh
+privy users list --limit 100
+privy users list --limit 100 --all --max-pages 5
+```
+
+For example, `page_counts: [29, 0]` explicitly shows a terminal empty page; `[20, 9]` does not. `end_reason` is `single_page`, `max_pages_reached` or `cursor_exhausted`. Pagination diagnostics contain counts rather than user records. User records/export contents may be personal data despite credential redaction.
 
 ## Users
 

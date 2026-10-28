@@ -142,8 +142,7 @@ export class DashboardClient {
     if (!force && tokenClaims(current.accessToken).exp > Date.now() / 1000 + 60) return current;
     const data = await this.raw('/api/v1/sessions', 'POST', current, { refresh_token: current.refreshToken });
     if (data.session_update_action === 'clear') {
-      await this.store.clear();
-      throw new CliError('SESSION_EXPIRED', 'Privy cleared this session. Run auth login again.');
+      throw new CliError('SESSION_EXPIRED', 'Privy reported that this session has expired. The local entry was retained; use auth login --replace for a fresh sign-in.');
     }
     if (data.session_update_action === 'ignore') {
       if (tokenClaims(current.accessToken).exp <= Date.now() / 1000) throw new CliError('SESSION_EXPIRED', 'No renewed token was issued. Run auth login again.');
@@ -158,6 +157,33 @@ export class DashboardClient {
     // Persist rotated credentials before another request can use them.
     await this.store.save(next);
     return next;
+  }
+  /** One explicit renewal attempt, then a direct access check (never a second refresh). */
+  async renewAndVerifySession(): Promise<JsonObject> {
+    const before = await this.credentials();
+    let renewed: Credentials;
+    try { renewed = await this.refresh(); }
+    catch (cause) {
+      if (cause instanceof CliError && (cause.status === 401 || cause.code === 'SESSION_EXPIRED')) {
+        const error = new CliError('LOGIN_REQUIRED', 'The saved session could not be renewed. Fresh sign-in is required; use auth login --replace. No automatic login, logout or credential deletion occurred.', 2);
+        error.details = { refreshAttempted: true, credentialsChanged: false, requiresFreshLogin: true, reason: cause.code, ...(cause.status ? { httpStatus: cause.status } : {}) };
+        throw error;
+      }
+      // Transport errors/5xx/save failures can leave renewal uncertain. Never retry or fall back to login.
+      if (cause instanceof CliError) {
+        cause.details = { ...cause.details, phase: 'session_renewal', refreshAttempted: true };
+        cause.hint = 'Renewal did not complete reliably. Do not automatically retry, log out or replace the session. Inspect auth status --remote before deciding the next action.';
+      }
+      throw cause;
+    }
+    const changed = before.accessToken !== renewed.accessToken || before.refreshToken !== renewed.refreshToken;
+    try { await this.validateLogin(renewed); }
+    catch (cause) {
+      const error = new CliError('SESSION_ACCESS_UNVERIFIED', 'Session renewal returned, but dashboard access could not be verified. Any saved renewal was retained. Inspect auth status --remote; no second refresh or fresh login was attempted.');
+      error.details = { refreshAttempted: true, credentialsChanged: changed, remoteVerified: false, ...(cause instanceof CliError ? { reason: cause.code, ...(cause.status ? { httpStatus: cause.status } : {}) } : {}) };
+      throw error;
+    }
+    return { authenticated: true, remoteVerified: true, refreshAttempted: true, credentialsChanged: changed, sessionAction: changed ? 'refreshed' : 'reused', expiresAt: new Date(tokenClaims(renewed.accessToken).exp * 1000).toISOString() };
   }
   private async request(path: string, method = 'GET', body?: unknown, text = false, acknowledgementOnly = false): Promise<any> {
     // No retry loop: avoid duplicating writes or burning rotating refresh tokens.
@@ -188,17 +214,17 @@ export class DashboardClient {
   }
   async authStatus(remote = false): Promise<JsonObject> {
     const stored = await this.store.load();
-    if (!stored) return { credentialsPresent: false, remote: { checked: false }, refreshAttempted: false, credentialsChanged: false, nextStep: 'auth login' };
+    if (!stored) return { state: 'no_credentials', credentialsPresent: false, remote: { checked: false }, refreshAttempted: false, credentialsChanged: false, nextStep: 'No saved dashboard session. Run auth login in an interactive terminal.' };
     const claims = tokenClaims(stored.accessToken);
     const local = { credentialsPresent: true, accessExpiresAt: new Date(claims.exp * 1000).toISOString(), accessExpired: claims.exp <= Date.now() / 1000, refreshAttempted: false, credentialsChanged: false };
-    if (!remote) return { ...local, remote: { checked: false }, note: 'Local expiry is not server authorization or refresh-validity proof. Use --remote for one account-list GET without renewal.' };
+    if (!remote) return { ...local, state: local.accessExpired ? 'access_expired' : 'access_unverified', remote: { checked: false }, refreshValidity: 'not_checked', note: 'Saved credentials are not proof of current access. Access-token expiry does not establish whether the session can be renewed.', nextStep: local.accessExpired ? 'Saved session credentials exist, but the access token has expired. Run auth login to attempt renewal, or auth refresh explicitly.' : 'Use auth status --remote to check access without changing credentials.' };
     try {
       const data = await this.raw('/api/v1/teams', 'GET', stored);
       if (!Array.isArray(data.data)) throw new CliError('INVALID_RESPONSE', 'Account validation returned an unexpected shape.');
-      return { ...local, remote: { checked: true, authenticated: true }, refreshValidity: 'not_checked' };
+      return { ...local, state: 'authenticated', remote: { checked: true, authenticated: true }, refreshValidity: 'not_checked' };
     } catch (error) {
       if (!(error instanceof CliError) || error.status !== 401) throw error;
-      return { ...local, remote: { checked: true, authenticated: false, httpStatus: 401 }, refreshValidity: 'unknown', nextStep: 'Access credential rejected; this does not establish refresh-token validity. Use a deliberate auth refresh or independent auth login; no automatic renewal or local cleanup occurred.' };
+      return { ...local, state: local.accessExpired ? 'access_expired' : 'access_rejected', remote: { checked: true, authenticated: false, httpStatus: 401 }, refreshValidity: 'unknown', nextStep: 'Saved session credentials exist, but access was rejected. Renewal validity is unknown. Run auth login to attempt renewal, or auth refresh explicitly. This status check did not renew or delete credentials.' };
     }
   }
   async whoami(): Promise<JsonObject> {
@@ -449,6 +475,7 @@ export class DashboardClient {
       const maxPages = options.all ? options.maxPages ?? 10 : 1;
       if (!Number.isInteger(maxPages) || maxPages < 1 || maxPages > 100) throw new CliError('INVALID_INPUT', 'Maximum pages must be 1–100.', 2);
       const rows: JsonObject[] = [], seen = new Set<string>();
+      const pageCounts: number[] = [], returnedPageCounts: number[] = [];
       let cursor = plan.query.cursor, nextCursor: string | null = null, pages = 0, pageSizeExceeded = false;
       if (cursor) seen.add(cursor);
       do {
@@ -459,6 +486,7 @@ export class DashboardClient {
         const items = op.pagination.cursorMode === 'last-item-id' ? page[op.pagination.items].slice(0, pagePlan.query.limit) : page[op.pagination.items];
         if (items.length > pagePlan.query.limit) pageSizeExceeded = true;
         rows.push(...items);
+        pageCounts.push(items.length); returnedPageCounts.push(page[op.pagination.items].length);
         pages++;
         nextCursor = continuation;
         if (op.pagination.cursorMode === 'last-item-id') {
@@ -475,6 +503,7 @@ export class DashboardClient {
         cursor = nextCursor;
       } while (cursor && pages < maxPages);
       return { data: op.approvalSummary ? rows.map(row => summarizeApproval(row, plan.pathParams.app_id)) : rows, next_cursor: nextCursor, has_more: Boolean(nextCursor), pages_read: pages,
+        pagination: { requested_limit: plan.query.limit, page_counts: pageCounts, returned_page_counts: returnedPageCounts, continuation_available: Boolean(nextCursor), end_reason: nextCursor ? options.all ? 'max_pages_reached' : 'single_page' : 'cursor_exhausted', continuation_basis: op.pagination.cursorMode === 'last-item-id' ? 'last_displayed_id' : op.pagination.doneField ? 'server_done_and_cursor' : 'server_cursor', has_more_meaning: 'A continuation is available; another nonempty page is not guaranteed.' },
         ...(pageSizeExceeded ? { requested_page_size: plan.query.limit, page_size_warning: 'The API returned more rows than requested for this query mode. Rows were retained rather than silently discarded.' } : {}),
         ...(options.all ? { truncated: Boolean(nextCursor), max_pages: maxPages } : {}) };
     }

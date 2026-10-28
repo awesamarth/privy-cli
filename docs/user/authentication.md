@@ -8,15 +8,23 @@ privy --profile work auth login
 privy --profile work auth status --remote
 ```
 
-## Normal login needs a human
+## Reuse a saved session first
 
-Use an interactive terminal and a normal browser on the same machine. Login asks for the dashboard email, opens a temporary loopback verification page, and waits for genuine browser hCaptcha verification. Complete any challenge normally. Then enter the email code at this exact terminal prompt:
+`auth login` with saved credentials attempts **one session renewal**, persists the result and directly verifies remote dashboard access. It does this before requiring an interactive terminal, so an agent can recover expired access without hitting an “already logged in” refusal. Success reports `sessionAction`, `refreshAttempted`, `credentialsChanged`, `remoteVerified` and the selected profile. It does not report success merely because credentials exist.
+
+An explicit renewal rejection returns `LOGIN_REQUIRED` with a profile-qualified fresh-login action. Use `auth login --replace` deliberately to sign in again; no automatic fresh login, logout or local deletion occurs. Network failures,5xx, unexpected responses or storage errors stop without retry/fallback because renewal may be uncertain. `SESSION_ACCESS_UNVERIFIED` means renewal returned but the subsequent access check failed; any saved renewal is retained. Inspect `auth status --remote` before deciding what to do next.
+
+`--replace` intentionally bypasses reuse. If saved credentials exist, `--email` or `--cdp` also requires `--replace` so a request for a specific identity/import is not silently treated as renewal of another saved identity.
+
+## Fresh login needs a human
+
+When no credentials exist, or when explicitly using `--replace`, use an interactive terminal and a normal browser on the same machine. Login asks for the dashboard email, opens a temporary loopback verification page, and waits for genuine browser hCaptcha verification. Complete any challenge normally. Then enter the email code at this exact terminal prompt:
 
 `Login code (input won't be displayed):`
 
 Input is hidden, including pasted characters. There is no code flag, environment variable, or chat-based OTP handoff. Agents should ask the operator to complete this terminal/browser step, not collect the code themselves. Login uses no-signup mode and validates dashboard access before saving credentials. No email send or exchange is automatically retried. MFA/SSO workarounds are not supported.
 
-`auth login --no-open` prints the local verification URL for manual opening. `--timeout` bounds the flow, default300 seconds. A browser opener failure can be recovered manually; a headless environment lacking an interactive terminal, same-machine browser or secure store is not a supported onboarding workflow.
+During fresh login, `auth login --no-open` prints the local verification URL for manual opening. `--timeout` bounds the fresh-login flow, default300 seconds. A browser opener failure can be recovered manually; a headless environment lacking an interactive terminal, same-machine browser or secure store is not a supported onboarding workflow.
 
 ## Storage and profiles
 
@@ -27,10 +35,10 @@ Profiles separate saved sessions and selected apps. Nonsecret configuration is a
 ## Diagnose before replacing a session
 
 - `doctor`: local runtime/browser-launcher/terminal/store checks, no API requests. It does not prove remote authentication.
-- `auth status`: saved credential presence and local expiry, no network or renewal.
-- `auth status --remote`: one remote access check, no refresh, save or deletion. Inspect `remote.authenticated`; exit0 only means inspection completed.
+- `auth status`: saved credential presence and local expiry, no network or renewal. `access_expired` does **not** mean the saved session cannot be renewed.
+- `auth status --remote`: one remote access check, no refresh, save or deletion. Inspect `state`, `remote.authenticated` and `refreshValidity`; exit0 only means inspection completed. An access401 does not establish refresh-token validity. Output includes the selected profile and a structured `recommendedAction`; the suggestion has not been executed.
 - Ordinary API commands can refresh near-expiry credentials and persist rotation. `auth whoami` may refresh and returns identity/account information.
-- `auth refresh`: deliberate renewal and persistence. Expired access alone does not prove the refresh token has failed. Do not loop refresh on a 5xx/timeout; rotation may have happened even if the response was lost.
+- `auth login` with saved credentials and `auth refresh`: one deliberate renewal, persistence and a direct remote access check. Expired access alone does not prove the refresh token has failed. An explicit session-expired response leaves the local entry intact for deliberate replacement; it is not treated as usable access. Do not loop refresh on a 5xx/timeout; rotation may have happened even if the response was lost.
 - `auth logout`: revoke this session, then remove local credentials; revocation failure retains them. Independent resource secrets are retained.
 - `auth logout --local`: remove local credentials without revoking remotely. `auth login --replace`: replace the saved session without revoking the previous one. Neither is a harmless diagnostic.
 

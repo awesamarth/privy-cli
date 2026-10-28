@@ -27,7 +27,7 @@ privy --profile work accounts list
 privy --profile work apps list
 ```
 
-Normal login uses your browser for CAPTCHA verification and a **hidden terminal prompt** for the email code. Do not paste codes into chat. No debugging port is needed. `auth status --remote` checks access without refreshing or changing credentials; inspect `remote.authenticated`, not only the exit code.
+`auth login` first attempts to renew and remotely verify an existing saved session, including from an agent's non-interactive command. Fresh login—no saved credentials, or explicit `--replace`—uses your browser for CAPTCHA verification and a **hidden terminal prompt** for the email code. Do not paste codes into chat. No debugging port is needed. `auth status --remote` remains read-only; inspect `state`, `remote.authenticated` and `recommendedAction`, not only the exit code. Expired access does not prove the saved session cannot be renewed.
 
 Profiles separate sessions and saved app selections. `project show` explains effective context; `project init` can bind a directory to an app without storing credentials. Profile precedence is flag → environment → directory binding → default; app precedence is flag → matching directory binding → saved selection. Account-scoped operations require explicit `--account`.
 

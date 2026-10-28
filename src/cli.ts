@@ -4,7 +4,7 @@ import { chooseAppSecretStorage, prepareAppSecretStorage, storagePreview } from 
 import { join } from 'node:path';
 import { findProject, resolveProjectContext, writeProject, PROJECT_FILE, type ProjectContext } from './project.ts';
 import { Command, CommanderError } from 'commander';
-import { DashboardClient, tokenClaims } from './client.ts';
+import { DashboardClient } from './client.ts';
 import { browserLogin } from './browser.ts';
 import { emailLogin, validateEmail } from './login.ts';
 import { browserLauncherAvailable, requireInteractiveLogin, openDefaultBrowser } from './terminal.ts';
@@ -119,7 +119,7 @@ for (const op of operations) {
       if (op.ecosystemConnection.action === 'list') command.option('--all', 'show all returned connection metadata, capped at 1000; no extra requests or invented pagination');
       else command.option('--allow-access-change', 'acknowledge cross-app grants/revocations or an external access request; approval can have irreversible effects');
     }
-    if (op.pagination) command.option('--all', 'follow cursors, bounded by --max-pages')
+    if (op.pagination) command.option('--all', 'follow cursors with this command’s page size, bounded by --max-pages')
       .option('--max-pages <number>', 'maximum pages with --all (1–100; default 10)');
     if (op.method !== 'GET') command.option('--yes', 'confirm this mutation or export');
     if (op.behavior === 'create-app' || op.credentialWrite === 'create') command
@@ -226,19 +226,32 @@ for (const op of operations) {
 group('accounts').action(async (_opts, cmd) => run(cmd, ({ client }) => client.execute('accounts.list', {})));
 
 const auth = group('auth');
-auth.command('login').description('Verify in your normal browser, enter a login code in the terminal, and securely save the session')
+auth.command('login').description('Renew and verify a saved session first; use browser/email login only for a new or explicitly replaced session')
   .option('--email <address>', 'dashboard email address (otherwise prompted); the login code is always entered in the terminal')
   .option('--no-open', 'print the local verification URL without opening the default browser')
   .option('--cdp <url>', 'legacy opt-in: import a shared session from an existing loopback Chrome debugging endpoint')
-  .option('--timeout <seconds>', 'maximum login wait', '300')
-  .option('--replace', 'replace local credentials without revoking the previous remote session')
+  .option('--timeout <seconds>', 'maximum fresh-login wait', '300')
+  .option('--replace', 'start fresh login/import instead of renewal; does not revoke the previous remote session')
   .action(async (_opts, cmd) => run(cmd, async ({ client, credentials, config, options }) => {
     const seconds = Number(options.timeout);
     if (!Number.isInteger(seconds) || seconds < 1 || seconds > 1800) throw new CliError('INVALID_TIMEOUT', 'Timeout must be 1–1800 seconds.', 2);
     if (options.cdp && (options.email !== undefined || options.open === false)) throw new CliError('INVALID_OPTIONS', '--cdp cannot be combined with email-login options.', 2);
     if (options.email !== undefined) validateEmail(options.email);
-    if (!options.cdp) requireInteractiveLogin();
-    if (await credentials.load() && !options.replace) throw new CliError('ALREADY_LOGGED_IN', 'Credentials already exist. Use another --profile, auth logout, or login --replace.', 2);
+    if (await credentials.load() && !options.replace) {
+      if (options.cdp || options.email !== undefined) throw new CliError('SESSION_REPLACEMENT_REQUIRED', 'Saved credentials exist. Omit --email/--cdp to renew this profile, or use --replace for the explicitly requested fresh sign-in/import.', 2);
+      try { return { ...await client.renewAndVerifySession(), profile: options.profile, credentialStore: 'os-keychain' }; }
+      catch (error) {
+        if (error instanceof CliError) error.details = { ...error.details, profile: options.profile, ...(error.code === 'LOGIN_REQUIRED' ? { recommendedAction: { command: 'privy', args: ['--profile', options.profile, 'auth', 'login', '--replace'], requiresTTY: true } } : {}) };
+        throw error;
+      }
+    }
+    if (!options.cdp) {
+      try { requireInteractiveLogin(); }
+      catch (error) {
+        if (error instanceof CliError) error.details = { profile: options.profile, requiresTTY: true, recommendedAction: { command: 'privy', args: ['--profile', options.profile, 'auth', 'login', ...(options.replace ? ['--replace'] : []), ...(options.email !== undefined ? ['--email', options.email] : []), ...(options.open === false ? ['--no-open'] : [])] } };
+        throw error;
+      }
+    }
     if (options.cdp) {
       await browserLogin({ cdp: options.cdp, timeoutSeconds: seconds, signal: interrupted.signal,
         validate: value => client.validateLogin(value), save: value => credentials.save(value), log });
@@ -247,17 +260,24 @@ auth.command('login').description('Verify in your normal browser, enter a login 
         validate: (value, signal) => new DashboardClient(credentials, config, undefined, signal).validateLogin(value),
         save: value => credentials.save(value), log });
     }
-    return { authenticated: true, profile: options.profile, credentialStore: 'os-keychain' };
+    return { authenticated: true, remoteVerified: true, sessionAction: 'signed_in', profile: options.profile, credentialStore: 'os-keychain' };
   }));
 auth.command('status').description('Inspect local session expiry; optionally check remote access WITHOUT refreshing or changing credentials')
   .option('--remote', 'one account-list GET with the saved access credential; no refresh, logout or identity output')
-  .action(async (_opts, cmd) => run(cmd, ({ client, options }) => client.authStatus(options.remote)));
+  .action(async (_opts, cmd) => run(cmd, async ({ client, options }) => {
+    const status = await client.authStatus(options.remote);
+    const action = status.state === 'authenticated' ? undefined : status.state === 'access_unverified' ? ['auth', 'status', '--remote'] : ['auth', 'login'];
+    return { ...status, profile: options.profile, ...(action ? { recommendedAction: { command: 'privy', args: ['--profile', options.profile, ...action], changesCredentials: action[1] === 'login', requiresTTY: status.state === 'no_credentials' } } : {}) };
+  }));
 auth.command('whoami').description('Verify remote access and show current identity and accounts')
   .action(async (_opts, cmd) => run(cmd, ({ client }) => client.whoami()));
-auth.command('refresh').description('Refresh the dashboard session and persist rotated credentials')
-  .action(async (_opts, cmd) => run(cmd, async ({ client }) => {
-    const credentials = await client.refresh();
-    return { authenticated: true, expiresAt: new Date(tokenClaims(credentials.accessToken).exp * 1000).toISOString() };
+auth.command('refresh').description('Attempt one session renewal, persist it and verify remote dashboard access')
+  .action(async (_opts, cmd) => run(cmd, async ({ client, options }) => {
+    try { return { ...await client.renewAndVerifySession(), profile: options.profile }; }
+    catch (error) {
+      if (error instanceof CliError) error.details = { ...error.details, profile: options.profile, ...(error.code === 'LOGIN_REQUIRED' ? { recommendedAction: { command: 'privy', args: ['--profile', options.profile, 'auth', 'login', '--replace'], requiresTTY: true } } : {}) };
+      throw error;
+    }
   }));
 auth.command('logout').description('Revoke this session and remove local credentials, not all user sessions')
   .option('--local', 'only remove local credentials; does not revoke remote access')
@@ -385,10 +405,11 @@ function schema(parts: string[]) {
     diff: has('--diff') ? '--diff reads live state without writing; do not combine with --dry-run.' : null,
     consent: 'Execution/impact flags do not authorize actions beyond the user request. Ask when intent, credentials or prerequisites are missing.',
     input: has('--body') ? 'Use one body source; booleans need true/false; arrays replace complete arrays. Sensitive fields require piped JSON, never argv, chat or plaintext files.' : null,
-    verification: op?.response ?? 'A successful diagnostic/local operation is not proof of remote authentication or external behavior; see the guide.',
+    verification: op?.response ?? (path === 'auth login' || path === 'auth refresh' ? 'Success requires a direct remote dashboard access check after session renewal or fresh login.' : path === 'auth status' ? 'Read-only: saved credentials/access expiry are distinct from session renewal validity. --remote checks access without refreshing.' : 'A successful diagnostic/local operation is not proof of remote authentication or external behavior; see the guide.'),
     recovery: 'Inspect state before retrying an uncertain write. No automatic write retry or rollback. privy docs read recovery',
   };
-  process.stdout.write(JSON.stringify(op ? { ...operationSchema(op), guidance, cli: found } : { ...found, kind: 'workflow', apiRequest: null, examples: localExamples[path] ?? [], guides: guideRefs(path), guidance }, null, 2) + '\n');
+  const authWorkflow = path === 'auth login' || path === 'auth refresh' ? { savedSession: 'One renewal attempt, persist renewal, then direct remote verification; no TTY needed for this attempt.', freshLogin: path === 'auth login' ? 'No saved credentials: interactive browser/email login. --replace explicitly starts fresh login; existing credentials with --email/--cdp require --replace.' : 'Use auth login --replace only after explicit renewal rejection and approval for a fresh sign-in.', failure: 'LOGIN_REQUIRED for explicit renewal rejection; transport/5xx/ambiguous responses stop without retry or automatic replacement. Post-renewal access failure retains any saved renewal.', scope: 'Selected profile only; no automatic logout or local credential deletion.' } : path === 'auth status' ? { readOnly: true, states: ['no_credentials', 'access_expired', 'access_unverified', 'access_rejected', 'authenticated'], renewalValidity: 'Not established by an access-token401. recommendedAction is guidance, not an action taken.', profileIncluded: true } : undefined;
+  process.stdout.write(JSON.stringify(op ? { ...operationSchema(op), guidance, cli: found } : { ...found, kind: 'workflow', apiRequest: null, ...(authWorkflow ? { workflow: authWorkflow } : {}), examples: localExamples[path] ?? [], guides: guideRefs(path), guidance }, null, 2) + '\n');
 }
 program.command('schema <command...>').description('Describe the actual API request, inputs and behavior of a command').action(schema);
 group('cli').command('schema <command...>').description('Alias for privy schema').action(schema);
