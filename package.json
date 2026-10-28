@@ -1,0 +1,32 @@
+{
+  "name": "@awesamarth/privy-cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Unofficial, agent-friendly Privy dashboard management CLI",
+  "type": "module",
+  "bin": {
+    "privy": "./dist/cli.js"
+  },
+  "files": ["dist", "docs/user", "README.md"],
+  "scripts": {
+    "dev": "bun src/cli.ts",
+    "build": "node scripts/build.mjs",
+    "prepack": "node scripts/build.mjs",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run typecheck && bun test && bun run build",
+    "smoke:package": "node scripts/package-smoke.mjs"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "dependencies": {
+    "@napi-rs/keyring": "2.1.2",
+    "commander": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/node": "22",
+    "typescript": "^5.9.3"
+  }
+}

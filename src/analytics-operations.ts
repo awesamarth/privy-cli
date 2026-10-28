@@ -1,0 +1,25 @@
+import { CliError } from './errors.ts';
+import type { Field, JsonObject, Operation } from './operations.ts';
+const date: Field = { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'UTC calendar date YYYY-MM-DD. Custom ranges require both dates and are capped at 366 days by the CLI.' };
+const dates = { start_date: date, end_date: date };
+const grain: Record<string, Field> = { time_grain: { type: 'string', enum: ['day', 'week', '30_day', 'all_time'], description: 'Observed backend time grains; omit to retain all returned grains.' } };
+const common = { scope: 'app' as const, method: 'GET' as const, keywords: ['analytics', 'report', 'metrics', 'statistics', 'activity', 'JSON'], evidence: 'actual Overview/Revenue dashboard and loaded analytics hooks; no billing or money-movement actions', response: 'Backend JSON and freshness metadata retained. Empty/no activity is not an error or fabricated zero. No invented pagination for report APIs.' };
+export const analyticsOperations: Operation[] = [
+  { ...common, id: 'analytics.overview', command: 'analytics overview', path: '/api/v1/apps/{app_id}/analytics', summary: 'Read the app analytics overview JSON.', examples: ['privy analytics overview'] },
+  ...(['users', 'logins', 'wallet-types'] as const).map(metric => ({ ...common, id: `analytics.${metric}`, command: `analytics ${metric}`, path: `/api/v1/apps/{app_id}/analytics/${metric}`, query: grain, summary: `Read ${metric} metrics with an optional time-grain filter.`, examples: [`privy analytics ${metric}`, `privy analytics ${metric} --time-grain all_time`] })),
+  ...(['daily', 'transaction-volume', 'assets-in-wallets'] as const).map(metric => ({ ...common, id: `analytics.${metric}`, command: `analytics ${metric}`, path: `/api/v1/apps/{app_id}/analytics/${metric}`, query: dates, summary: `Read ${metric} reporting with optional bounded calendar dates.`, examples: [`privy analytics ${metric} --start-date 2026-10-01 --end-date 2026-10-24 --dry-run`] })),
+  { ...common, id: 'analytics.wallet-balances', command: 'analytics wallet-balances', path: '/api/v1/apps/{app_id}/analytics/wallets', query: { wallet_addresses: { type: 'array', minItems: 1, maxItems: 100, items: { type: 'string', maxLength: 128 }, description: 'Optional JSON address array, at most 100. Encoded as the dashboard comma-separated wallet_addresses filter.' } }, summary: 'Read delayed analytics wallet balances, optionally filtered by wallet addresses.', examples: ['privy analytics wallet-balances --wallet-addresses \'["0x0000000000000000000000000000000000000001"]\' --dry-run'] },
+  { ...common, id: 'analytics.freshness', command: 'analytics freshness', path: '/api/v1/apps/{app_id}/analytics/data-freshness', params: ['dataset'], queryFromParams: { dataset: 'dataset' }, query: { dataset: { type: 'string', enum: ['wallets', 'wallet-summary', 'transaction-volume', 'assets-in-wallets'], description: 'Dataset names used by dashboard freshness labels.' } }, summary: 'Read data-through date and staleness for an observed analytics dataset.', examples: ['privy analytics freshness wallet-summary'] },
+  { ...common, id: 'analytics.revenue', command: 'analytics revenue', path: '/api/v1/apps/{app_id}/yield/overview', summary: 'Read actual Revenue/Earn balances and earnings JSON; does not activate Earn.', examples: ['privy analytics revenue'] },
+  { ...common, id: 'analytics.vaults', command: 'analytics vaults', path: '/api/v1/apps/{app_id}/yield/vaults', summary: 'Read configured Earn vaults; does not create a vault or deposit funds.', examples: ['privy analytics vaults'] },
+  { ...common, id: 'analytics.sponsorship', command: 'analytics sponsorship', scope: 'account', path: '/api/v1/teams/{account_id}/gas-sponsorship/statistics', summary: 'Read account gas-sponsorship statistics; no balance refill or configuration change.', examples: ['privy analytics sponsorship --account <account-id>'] },
+];
+export function validateAnalytics(op: Operation, query: JsonObject): void {
+  if (!op.id.startsWith('analytics.')) return;
+  if (query.start_date !== undefined || query.end_date !== undefined) {
+    if (!query.start_date || !query.end_date) throw new CliError('DATE_RANGE_REQUIRED', 'Supply both --start-date and --end-date for a bounded report.', 2);
+    const start = Date.parse(query.start_date + 'T00:00:00Z'), end = Date.parse(query.end_date + 'T00:00:00Z');
+    if (!Number.isFinite(start) || !Number.isFinite(end) || new Date(start).toISOString().slice(0, 10) !== query.start_date || new Date(end).toISOString().slice(0, 10) !== query.end_date || end < start || end - start > 366 * 86400000) throw new CliError('INVALID_DATE_RANGE', 'Use valid ordered calendar dates spanning at most 366 days.', 2);
+  }
+  if (query.wallet_addresses && (query.wallet_addresses.some((address: string) => !/^(?:0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/.test(address)) || new Set(query.wallet_addresses).size !== query.wallet_addresses.length)) throw new CliError('INVALID_WALLET_FILTER', 'Use distinct EVM or Solana addresses in the analytics filter.', 2);
+}

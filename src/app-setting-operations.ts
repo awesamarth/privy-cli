@@ -1,0 +1,42 @@
+import { isIP } from 'node:net';
+import { CliError } from './errors.ts';
+import type { Field, JsonObject, Operation } from './operations.ts';
+
+export function validateAllowedIps(values: string[]): void {
+  const normalized = values.map(value => {
+    if (value !== value.trim() || value.includes('%')) throw new CliError('INVALID_IP_ALLOWLIST', 'Use IP addresses/CIDRs without whitespace or IPv6 zone identifiers.', 2);
+    const parts = value.split('/'), version = isIP(parts[0]);
+    if (!version || parts.length > 2 || parts.length === 2 && (!/^(0|[1-9][0-9]*)$/.test(parts[1]) || Number(parts[1]) > (version === 4 ? 32 : 128))) throw new CliError('INVALID_IP_ALLOWLIST', 'Expected valid IPv4/IPv6 addresses or CIDRs with appropriate prefix lengths.', 2);
+    return value.toLowerCase();
+  });
+  if (new Set(normalized).size !== normalized.length) throw new CliError('DUPLICATE_IP_ALLOWLIST_ENTRY', 'IP allowlist entries must be distinct.', 2);
+}
+const common = { scope: 'app' as const, keywords: ['settings', 'security', 'server', 'IP', 'CIDR', 'allowlist'], evidence: 'actual Basics Advanced IP allowlist form and loaded GET/POST handlers; see management-map' };
+const path = '/api/v1/apps/{app_id}/ip_allowlist';
+const sessionFields: Record<string, Field> = {
+  session_timeout_minutes: { type: 'integer', minimum: 1440, maximum: 576000, description: 'App-user session duration: 1–400 days in minutes. UI default: 43200 (30 days).' },
+  session_inactivity_window_minutes: { type: 'integer', minimum: 1440, maximum: 576000, description: 'App-user inactivity/refresh duration: 1–400 days in minutes. UI default: 43200.' },
+  access_token_lifetime_minutes: { type: 'integer', minimum: 10, maximum: 1440, description: 'App-user access-token lifetime: 10–1440 minutes. UI default: 60.' },
+  id_token_lifetime_minutes: { type: 'integer', minimum: 10, maximum: 1440, description: 'App-user identity-token lifetime: 10–1440 minutes. UI default: 600.' },
+};
+const autoMode: Field = { type: 'string', enum: ['off', 'users-without-wallets', 'all-users'], description: 'Off, create for users without linked wallets, or create for all users even with external wallets.' };
+const chainMode: Field = { type: 'object', required: ['create_on_login'], additionalProperties: false, properties: { create_on_login: autoMode }, description: 'Use the global mode for an enabled chain, or off to disable this chain.' };
+const embedded = { scope: 'app' as const, keywords: ['settings', 'embedded', 'wallets', 'automatic', 'create', 'login', 'EVM', 'SVM', 'ethereum', 'solana'], evidence: 'actual Authentication Login methods auto-create controls and loaded app-update handler; see management-map' };
+export function prepareEmbeddedWalletUpdate(current: JsonObject, desired: JsonObject): { request: JsonObject; expected: JsonObject } {
+  const before = current?.embedded_wallet_config, change = desired.embedded_wallet_config;
+  const modes = ['off', 'users-without-wallets', 'all-users'];
+  if (!before || !modes.includes(before.create_on_login) || !modes.includes(before.ethereum?.create_on_login) || !modes.includes(before.solana?.create_on_login) || !Array.isArray(before.user_owned_recovery_options) || !before.user_owned_recovery_options.every((value: unknown) => typeof value === 'string') || typeof before.require_user_owned_recovery_on_create !== 'boolean') throw new CliError('INVALID_SETTING_STATE', 'Cannot safely preserve embedded-wallet recovery configuration. No write was sent.');
+  return {
+    request: { embedded_wallet_config: { ...change, user_owned_recovery_options: before.user_owned_recovery_options, require_user_owned_recovery_on_create: before.require_user_owned_recovery_on_create } },
+    expected: { embedded_wallet_config: { ...before, ...change, ethereum: { ...before.ethereum, ...change.ethereum }, solana: { ...before.solana, ...change.solana } } },
+  };
+}
+const sessions = { scope: 'app' as const, keywords: ['settings', 'sessions', 'expiry', 'lifetime', 'timeout', 'authentication'], evidence: 'actual Authentication Advanced duration controls and loaded POST /session_config handler; see management-map' };
+export const appSettingOperations: Operation[] = [
+  { ...embedded, id: 'config.embedded-wallets.get', command: 'config embedded-wallets get', summary: 'Read app-user wallet creation-on-login and recovery configuration.', method: 'GET', path: '/api/dashboard/apps/{app_id}', selectFields: ['embedded_wallet_config'], response: 'Embedded-wallet configuration, not keys. Dashboard auto-creation applies to Privy-modal login, not whitelabel login methods.', examples: ['privy config embedded-wallets get'] },
+  { ...embedded, id: 'config.embedded-wallets.update', command: 'config embedded-wallets update', summary: 'Configure EVM/SVM creation on login; preserve recovery settings and verify read-back.', method: 'POST', path: '/api/v1/apps/{app_id}', settingsWrite: { read: 'config.embedded-wallets.get', embeddedWallet: true }, body: { type: 'object', additionalProperties: false, required: ['embedded_wallet_config'], properties: { embedded_wallet_config: { type: 'object', additionalProperties: false, required: ['create_on_login', 'ethereum', 'solana'], properties: { create_on_login: autoMode, ethereum: chainMode, solana: chainMode }, description: 'Complete auto-creation choice. Recovery fields are read/preserved at execution, not writable here. Use --diff for the resolved request.' } } }, response: 'Fresh full configuration comparison including unchanged recovery/security fields. Changes future login behavior; does not sign, transact or immediately create wallets.', examples: ['privy config embedded-wallets update --embedded-wallet-config \'{"create_on_login":"users-without-wallets","ethereum":{"create_on_login":"users-without-wallets"},"solana":{"create_on_login":"off"}}\' --diff', 'privy config embedded-wallets update --embedded-wallet-config \'{"create_on_login":"off","ethereum":{"create_on_login":"off"},"solana":{"create_on_login":"off"}}\' --dry-run'] },
+  { ...sessions, id: 'config.sessions.get', command: 'config sessions get', summary: 'Read app-user session and token lifetimes; not the CLI administrator session.', method: 'GET', path: '/api/dashboard/apps/{app_id}', selectFields: Object.keys(sessionFields), response: 'Configured minute values; null means the service default. No session tokens or signing keys.', examples: ['privy config sessions get'] },
+  { ...sessions, id: 'config.sessions.update', command: 'config sessions update', summary: 'Update app-user session/token lifetimes and verify each changed field.', method: 'POST', path: '/api/v1/apps/{app_id}/session_config', settingsWrite: { read: 'config.sessions.get' }, body: { type: 'object', additionalProperties: false, minProperties: 1, properties: sessionFields }, response: 'Fresh settings read-back. Can change when app users need to reauthenticate. Does not rotate signing keys, revoke sessions, or change dashboard login.', examples: ['privy config sessions update --access-token-lifetime-minutes 30 --diff', 'privy config sessions update --session-timeout-minutes 43200 --dry-run'] },
+  { ...common, id: 'config.ip-allowlist.get', command: 'config ip-allowlist get', summary: 'Read this app’s server-API IP restrictions; not a restriction on running the CLI.', method: 'GET', path, response: 'allowed_ips array. Applies to server-to-server requests using this app secret, not dashboard-session CLI login.', examples: ['privy config ip-allowlist get'] },
+  { ...common, id: 'config.ip-allowlist.update', command: 'config ip-allowlist update', summary: 'Replace app-secret server-API IP restrictions; may block existing backend consumers.', method: 'POST', path, settingsWrite: { read: 'config.ip-allowlist.get', unordered: ['allowed_ips'] }, body: { type: 'object', additionalProperties: false, required: ['allowed_ips'], properties: { allowed_ips: { type: 'array', maxItems: 500, items: { type: 'string', maxLength: 64 }, description: 'Complete IPv4/IPv6/CIDR array, maximum 500 matching the dashboard. [] removes the restriction. Does not alter local firewall/network settings.' } } }, response: 'Fresh allowed-IP set comparison. This can deny app-secret API access from existing servers; review --diff before applying.', examples: ['privy config ip-allowlist update --allowed-ips \'["203.0.113.0/24"]\' --dry-run', 'privy config ip-allowlist update --allowed-ips "[]" --diff'] },
+];
