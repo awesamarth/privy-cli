@@ -32,13 +32,9 @@ privy search "google login"
 privy docs read getting-started
 ```
 
-For a locally supplied release artifact, use `npm install -g ./awesamarth-privy-cli-0.1.0.tgz` instead. This is an unofficial early release, not a claim of production readiness.
-
 Run bare `privy` in a terminal for the welcome banner and quick-start commands. Flags, subcommands and piped output do not show the banner; `NO_COLOR` disables its colours.
 
-Requires **Node.js 22.18+** and an unlocked OS credential store. Bun is development tooling only, not an end-user requirement. Runtime dependencies are Commander and an OS-keyring adapter; no bundled browser, Playwright or SDK stack.
-
-Live onboarding validation is macOS arm64. Linux Secret Service, Windows credential/browser integration, and wider browser/MFA/SSO support are not claimed. A headless environment without a secure store, interactive terminal and same-machine browser is not a supported onboarding workflow.
+Requires **Node.js 22.18+** and an unlocked OS credential store. Runtime dependencies are Commander and an OS-keyring adapter.
 
 ## Login and choose context
 
