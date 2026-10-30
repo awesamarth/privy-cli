@@ -26,6 +26,23 @@ privy users list --limit 100 --all --max-pages 5
 
 For example, `page_counts: [29, 0]` explicitly shows a terminal empty page; `[20, 9]` does not. `end_reason` is `single_page`, `max_pages_reached` or `cursor_exhausted`. Pagination diagnostics contain counts rather than user records. User records/export contents may be personal data despite credential redaction.
 
+## Summary lists and full detail
+
+`users list` and `wallets list` now return overview rows by default. **This changes their default row shape:** callers that need the previous detailed records should add `--full`. The `data` envelope, record order, filters, pagination and truncation semantics are unchanged. Other resource lists, individual `get` commands and mutation responses are unchanged.
+
+- **Users:** `id`, `names`, `emails`, `linked_account_types`, `wallet_count`. Names combine the reported display name and linked-account names; emails combine linked-account email values and email-account addresses. Both arrays deduplicate exact nonempty strings, preserve reported order and do not designate a primary identity. Missing names/emails produce empty arrays, not invented values. Types include wallet when present, not just login-capable accounts. `wallet_count` counts linked accounts of type `wallet`, not a separate query for wallet resources. Full linked-account details, timestamps and account state remain available through `users get` or `--full`.
+- **Wallets:** `id`, `address`, `chain_type`, `type`, `user_id`, `owner_id`. The owner reference is the returned `auth_key.id`, otherwise `user_id`, otherwise null. A null summary reference is **not** authorization to change ownership or proof a wallet is unowned. Inspect `wallets get` for control/policy/entity details. `--include-balance true` retains full rows automatically so explicitly requested balance details are not stripped; the API still determines whether balances are available.
+
+```sh
+privy users list --all --max-pages 5          # summaries across pages
+privy users list --all --full --max-pages 5   # full records across pages
+privy users get USER_ID                      # one full record
+privy wallets list --full
+privy wallets get WALLET_ID
+```
+
+**`--all` means more records; `--full` means more detail per record.** `--full` alone does not fetch extra pages, bypass redaction or change any internal preflight/verification read. Summaries still contain personal data; do not expose them in public recordings or shared logs. Full output is unnecessary for routine discovery, but inspect full state before decisions that depend on omitted fields. The third summary-enabled command, `global-wallet providers list`, is described in the integrations guide.
+
 ## Users
 
 Discover import, update, freeze/restore, unlink, revoke-session, bulk-job and delete commands by task. They have different consequences; an import submission is not proof every row succeeded. Inspect completed job status, per-record outcomes and exact user state before retrying partial imports. Do not resend invitations, email or other customer actions just to verify a configuration.

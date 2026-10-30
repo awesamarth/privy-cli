@@ -1,8 +1,22 @@
 {
   "name": "@awesamarth/privy-cli",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "Unofficial, agent-friendly Privy dashboard management CLI",
+  "license": "MIT",
+  "author": "Samarth Saxena",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/awesamarth/privy-cli.git"
+  },
+  "homepage": "https://github.com/awesamarth/privy-cli#readme",
+  "bugs": {
+    "url": "https://github.com/awesamarth/privy-cli/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
   "bin": {
     "privy": "./dist/cli.js"

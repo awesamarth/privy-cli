@@ -6,12 +6,35 @@ An agent-friendly CLI for managing **Privy developer accounts and apps**, inspir
 
 ## Install
 
-**Private pre-release; not published to npm and not production-ready.** Given a locally supplied package artifact:
+Choose one package manager (registry installation becomes available when the package is published):
 
 ```sh
-npm install -g ./awesamarth-privy-cli-0.1.0.tgz
-privy --help
+# npm
+npm install -g @awesamarth/privy-cli
+
+# Bun
+bun install -g @awesamarth/privy-cli
+
+# pnpm
+pnpm add -g @awesamarth/privy-cli
+
+# Yarn Classic (v1)
+yarn global add @awesamarth/privy-cli
 ```
+
+Yarn 2+ does not support `yarn global`; use npm, Bun or pnpm for a global install. Make sure your package manager's global bin directory is on `PATH` (`pnpm setup` configures it for pnpm).
+
+```sh
+privy --version
+privy                         # welcome banner and quick-start commands
+privy --help
+privy search "google login"
+privy docs read getting-started
+```
+
+For a locally supplied release artifact, use `npm install -g ./awesamarth-privy-cli-0.1.0.tgz` instead. This is an unofficial early release, not a claim of production readiness.
+
+Run bare `privy` in a terminal for the welcome banner and quick-start commands. Flags, subcommands and piped output do not show the banner; `NO_COLOR` disables its colours.
 
 Requires **Node.js 22.18+** and an unlocked OS credential store. Bun is development tooling only, not an end-user requirement. Runtime dependencies are Commander and an OS-keyring adapter; no bundled browser, Playwright or SDK stack.
 
@@ -43,6 +66,8 @@ privy docs read providers
 ```
 
 Search returns up to five commands with schema/guide pointers. Schema is the installed version's syntax authority: inputs, scope, confirmations and verification behavior. No skill installation, source checkout, login or network is required for discovery.
+
+`users list`, `wallets list` and `global-wallet providers list` return useful JSON summaries by default. Add `--full` for their previous detailed rows, or inspect one user/wallet with `get`. `--all` selects more records; `--full` selects more detail. Explicit wallet balance requests retain full rows. Pagination and redaction are unchanged; see `privy docs read resources`.
 
 A fresh agent may not discover an installed binary on its own. A request such as “Use the Privy CLI to create an app called my-new-test and enable Google login” makes the intended tool explicit without prescribing commands.
 
@@ -98,4 +123,4 @@ Guides ship with the CLI and work offline:
 
 ## From a source checkout
 
-Use `bun install`, `bun run typecheck`, `bun run build`, then `bun pm pack` to create a local artifact. Packing is not publishing. The package includes compiled code, the public `docs/user/` guides, README and package metadata. Local maintainer notes and research are git-ignored and excluded from the package.
+Use `bun install`, `bun run typecheck`, `bun run build`, then `bun pm pack` to create a local artifact. Packing is not publishing. The package includes compiled code, the public `docs/user/` guides, README, MIT license and package metadata. Local maintainer notes and research are git-ignored and excluded from the package.

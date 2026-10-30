@@ -19,7 +19,7 @@ try {
   execute(process.execPath, ['scripts/build.mjs']);
   const packed = JSON.parse(execute(process.execPath, [npmCli, 'pack', '--json', '--ignore-scripts', '--pack-destination', work]))[0];
   for (const entry of packed.files) {
-    assert(entry.path === 'package.json' || entry.path === 'README.md' || entry.path.startsWith('dist/'), `Unwanted packaged file: ${entry.path}`);
+    assert(entry.path === 'package.json' || entry.path === 'README.md' || entry.path === 'LICENSE' || /^dist\/[^/]+\.js$/.test(entry.path) || /^docs\/user\/[^/]+\.md$/.test(entry.path), `Unwanted packaged file: ${entry.path}`);
     if (entry.path.endsWith('.js')) assert(!/\bBun\./.test(readFileSync(join(root, entry.path), 'utf8')), `Bun runtime reference in ${entry.path}`);
   }
   const archive = join(work, packed.filename);
@@ -43,8 +43,11 @@ try {
     assert.match(run(['--help']), /Unofficial/);
     assert.match(run(['auth', 'login', '--help']), /--no-open/);
     const noninteractive = spawnSync(command, ['auth', 'login'], { cwd, env, encoding: 'utf8' });
-    assert.equal(noninteractive.status, 2);
-    assert.equal(JSON.parse(noninteractive.stderr).error.code, 'INTERACTIVE_REQUIRED');
+    // Saved-session recovery checks the OS store before fresh-login TTY input.
+    // An isolated HOME can lack an accessible vault even when the native binding loads.
+    const loginError = JSON.parse(noninteractive.stderr).error.code;
+    assert(['INTERACTIVE_REQUIRED', 'KEYCHAIN_UNAVAILABLE'].includes(loginError));
+    assert.equal(noninteractive.status, loginError === 'INTERACTIVE_REQUIRED' ? 2 : 1);
     const schema = JSON.parse(run(['schema', 'apps', 'config', 'update']));
     assert.equal(schema.httpMethod, 'POST');
     assert.equal(schema.requestBody.properties.email_auth.type, 'boolean');

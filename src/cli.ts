@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
+import { printWelcome } from './welcome.ts';
+import { listOutputSchema, summarizeList } from './list-output.ts';
 import { chooseAppSecretStorage, prepareAppSecretStorage, storagePreview } from './app-secret-storage.ts';
 import { join } from 'node:path';
 import { findProject, resolveProjectContext, writeProject, PROJECT_FILE, type ProjectContext } from './project.ts';
@@ -105,6 +107,7 @@ function group(path: string): Command {
 
 // Generated resource surface: definition -> help/flags -> validated plan -> execution.
 for (const op of operations) {
+  const listView = listOutputSchema(op.id);
   for (const path of [op.command, ...(op.aliases ?? [])]) {
     const parts = path.split(' '), verb = parts.pop()!;
     const command = group(parts.join(' ')).command(verb).description(op.summary)
@@ -121,6 +124,7 @@ for (const op of operations) {
     }
     if (op.pagination) command.option('--all', 'follow cursors with this command’s page size, bounded by --max-pages')
       .option('--max-pages <number>', 'maximum pages with --all (1–100; default 10)');
+    if (listView) command.option('--full', 'return full existing row detail instead of summaries; independent of --all; redaction still applies');
     if (op.method !== 'GET') command.option('--yes', 'confirm this mutation or export');
     if (op.behavior === 'create-app' || op.credentialWrite === 'create') command
       .option('--secret-store <destination>', 'app API secret destination: env, keychain, both or none; required non-interactively')
@@ -153,6 +157,7 @@ for (const op of operations) {
     command.addHelpText('after', '\nExamples:\n' + op.examples.map(e => `  ${e}`).join('\n') + `\n\nAPI contract: privy schema ${op.command}`
       + `\nContext: ${op.scope === 'account' ? 'explicit --account; this is workspace-scoped' : op.scope === 'app' ? 'selected app from --app, matching project, or profile; inspect project show' : 'authenticated dashboard account access'}`
       + (op.method !== 'GET' ? '\nExecute only authorized changes. Preview is offline; inspect state before retrying a failed write.' : '')
+      + (listView ? `\nDefault row fields: ${Object.keys(listView.fields).join(', ')}.\n${listView.detail}\n--all selects more records; --full selects more detail.${'balances' in listView ? `\n${listView.balances}` : ''}` : '')
       + '\nWorkflow guides:\n' + commandGuides(op.command).map(topic => `  privy docs read ${topic}`).join('\n'));
     command.action(async (...args: any[]) => run(args.at(-1), async ({ client, config, options, context, profiles, project }) => {
       if (op.behavior === 'delete-app' && context.appSource !== 'flag') throw new CliError('EXPLICIT_APP_REQUIRED', 'Deletion requires an explicit --app <id>, even when a profile or directory selects an app.', 2);
@@ -218,7 +223,7 @@ for (const op of operations) {
         if (!Object.hasOwn(result, options.field)) throw new CliError('UNKNOWN_FIELD', 'That field is not present in the app configuration.', 2);
         return { [options.field]: result[options.field] };
       }
-      return result;
+      return summarizeList(op.id, result, Boolean(options.full || op.id === 'wallets.list' && input.query?.include_balance === true));
     }));
   }
 }
@@ -456,7 +461,10 @@ function addWorkflowHelp(parent = program, prefix = ''): void {
 }
 addWorkflowHelp();
 program.addHelpText('after', '\nUse search → schema → preview/diff → execute → verify.\nRisk flags acknowledge requested actions; they do not authorize extra changes.');
-program.action(() => program.outputHelp());
+program.action(() => {
+  if (process.argv.length === 2 && process.stdout.isTTY) printWelcome(version);
+  else program.outputHelp();
+});
 
 try {
   const [major, minor] = process.versions.node.split('.').map(Number);

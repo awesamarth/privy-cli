@@ -28,6 +28,8 @@ Global-wallet availability means **this app's embedded wallets are available to 
 
 Custom connect/transact/auth URLs can be configured without publishing. Permission/signup changes have their own cookie gate. Keep unrelated controls unchanged.
 
+`global-wallet providers list` now returns summary rows: `app_id`, `name`, `status`, `availability`, `allowed_permissions`. Add `--full` for the previous safe metadata rows, including optional `icon_url` and `created_at`; this is not an unrestricted raw-response mode. `--all` independently increases the displayed collection from20 to at most1000 rows; both modes retain `totalAvailable`, `truncated`, protection filtering and the single-collection-request semantics. For example, `privy global-wallet providers list --all --full` requests full detail across the returned collection. The requester-list output is unchanged and does not accept `--full`.
+
 Provider/requester commands act on exact counterparts from the selected app's connection lists. Protect both app IDs. An enable is not an implicit request for invite-only access; use a deliberate request only when authorized. Accept/reject can grant/revoke cross-app access, and approval may have irreversible effects after the other app enables integration. Do not send requests to real vendors just to test the CLI. Fresh relationship status is not proof of an end-user SDK connection.
 
 ### Planned: complete two-app walkthrough
