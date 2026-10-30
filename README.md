@@ -6,7 +6,7 @@ An agent-friendly CLI for managing **Privy developer accounts and apps**, inspir
 
 ## Install
 
-Choose one package manager (registry installation becomes available when the package is published):
+Choose one package manager:
 
 ```sh
 # npm
