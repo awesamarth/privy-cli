@@ -1,8 +1,40 @@
-# Privy CLI · unofficial
+# Privy CLI
 
-An agent-friendly CLI for managing **Privy developer accounts and apps**, inspired by Cloudflare `cf` and Stripe CLI. Not affiliated with or endorsed by Privy. This is **not** Privy's agent-wallet CLI and does not sign transactions.
+**Manage your Privy account and apps from your agent or terminal. Inspired by Cloudflare's cf CLI (Unofficial)**
 
-**Discover → schema → preview/diff → execute → verify.** JSON output by default, local workflow guides, explicit mutations and OS-backed credential storage. Operations use direct HTTPS—not browser automation. Most management endpoints are undocumented dashboard APIs and can change.
+[![npm](https://img.shields.io/npm/v/@awesamarth/privy-cli)](https://www.npmjs.com/package/@awesamarth/privy-cli) [![license](https://img.shields.io/npm/l/@awesamarth/privy-cli)](LICENSE)
+
+```sh
+npm install -g @awesamarth/privy-cli
+```
+
+Everything you'd normally click through in the Privy dashboard, as one discoverable command:
+
+```sh
+privy apps list
+privy apps create --account ACCOUNT_ID --name my-dev-app --secret-store env --env-output .env.local --yes
+privy --app APP_ID apps config update --google-oauth true --diff     # preview a login-method change
+privy --app APP_ID users list --query alice@example.com
+privy --app APP_ID wallets list --chain-type ethereum
+privy --app APP_ID webhooks create --url https://api.example.com/privy --yes
+privy --app APP_ID analytics overview
+```
+
+Covers apps, login methods and OAuth providers, custom JWT auth, users, wallets, policies and key quorums, webhooks, API credentials, clients and domains, integrations (WalletConnect, smart wallets, Global Wallet), dashboard members and analytics.
+
+**Discover → schema → preview/diff → execute → verify.** JSON output by default, offline workflow guides, explicit mutations and OS-backed credential storage. Operations use direct HTTPS, not browser automation. Most management endpoints are undocumented dashboard APIs and can change.
+
+Not affiliated with or endorsed by Privy. This is **not** Privy's [agent-wallet CLI](https://www.npmjs.com/package/@privy-io/agent-wallet-cli) and it never signs transactions.
+
+## Use it with your agent
+
+Install the agent skill so Claude Code, Codex, Cursor and other agents know when and how to use the CLI safely:
+
+```sh
+npx skills add awesamarth/privy-cli
+```
+
+Then just ask: *"Use the Privy CLI to create an app called my-new-test and enable Google login."* Without the skill, name "Privy CLI" in your request so the agent knows to look for the installed binary. The agent handles discovery, previews and verification. You only need to step in to log in (browser CAPTCHA plus an email code typed into your own terminal).
 
 ## Install
 
@@ -28,7 +60,7 @@ Yarn 2+ does not support `yarn global`; use npm, Bun or pnpm for a global instal
 privy --version
 privy                         # welcome banner and quick-start commands
 privy --help
-privy search "google login"
+privy cli search "google login"
 privy docs read getting-started
 ```
 
@@ -64,8 +96,6 @@ privy docs read providers
 Search returns up to five commands with schema/guide pointers. Schema is the installed version's syntax authority: inputs, scope, confirmations and verification behavior. No skill installation, source checkout, login or network is required for discovery.
 
 `users list`, `wallets list` and `global-wallet providers list` return useful JSON summaries by default. Add `--full` for their previous detailed rows, or inspect one user/wallet with `get`. `--all` selects more records; `--full` selects more detail. Explicit wallet balance requests retain full rows. Pagination and redaction are unchanged; see `privy docs read resources`.
-
-A fresh agent may not discover an installed binary on its own. A request such as “Use the Privy CLI to create an app called my-new-test and enable Google login” makes the intended tool explicit without prescribing commands.
 
 For a new development app (replace uppercase placeholders with discovered IDs):
 
@@ -116,6 +146,29 @@ Guides ship with the CLI and work offline:
 ## Planned
 
 - **End-to-end Global Wallet walkthrough:** two-app connection requests, approvals and enable/disable flows using a Privy-approved provider workspace. The management commands already exist; provider availability requires Privy account approval. No release date is committed.
+
+## FAQ
+
+**Is there a CLI for the Privy dashboard?**
+Yes, this one. It's unofficial and community-built. `privy` lets you create and configure Privy apps, toggle login methods and manage users, wallets, policies, webhooks, credentials, members and analytics from the terminal.
+
+**How is this different from `@privy-io/agent-wallet-cli`?**
+They're different tools. Privy's official agent-wallet CLI gives an AI agent its own wallet to fund and transact with. This CLI manages your Privy *developer account and apps*, the things you'd otherwise do in the dashboard. It never signs transactions or moves funds.
+
+**Can Claude Code, Codex or Cursor set up my Privy app?**
+Yes. Install the CLI and the skill (`npx skills add awesamarth/privy-cli`), log in once yourself, then ask your agent. It discovers commands with `privy cli search` and `privy schema`, previews with `--dry-run`/`--diff` and reads back every change.
+
+**Is it safe to let an agent run it?**
+Mutations need explicit confirmation flags, previews never write, secrets only go through stdin, and failed writes are never retried or rolled back automatically. Billing, production upgrades, signing and key export are out of scope. Still review what your agent does, especially on production apps.
+
+**How does login work?**
+`privy auth login` asks for your dashboard email, opens a local page for the CAPTCHA, then takes the email code at a hidden terminal prompt. The session is stored in your OS keychain, not in env files.
+
+**Why "inspired by Cloudflare's cf CLI"?**
+Same idea: the whole dashboard behind one consistent, machine-readable command line with built-in search, schemas, previews and docs, so humans and agents can drive it without guessing.
+
+**Will it break?**
+Possibly. Most of the APIs it uses are the dashboard's own undocumented endpoints, which Privy can change at any time. Please [open an issue](https://github.com/awesamarth/privy-cli/issues) if something stops working.
 
 ## From a source checkout
 

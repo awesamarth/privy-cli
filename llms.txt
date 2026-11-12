@@ -1,0 +1,33 @@
+# Privy CLI
+
+> Manage your Privy account and apps from your agent or terminal. Inspired by Cloudflare's cf CLI (Unofficial). The `privy` command (npm: @awesamarth/privy-cli) creates and configures Privy apps, toggles login methods, and manages users, wallets, policies, webhooks, API credentials, integrations, dashboard members and analytics, using the same APIs as the Privy dashboard. JSON output, explicit mutations, offline docs and schemas.
+
+Not affiliated with Privy. It is different from Privy's official `@privy-io/agent-wallet-cli`, which gives agents wallets for funding and transactions; this CLI manages the developer dashboard and never signs transactions.
+
+Install with `npm install -g @awesamarth/privy-cli` (Node.js 22.18+). Agents can install the skill with `npx skills add awesamarth/privy-cli`. The workflow is: `privy cli search "task"` → `privy schema <command>` → `--dry-run` / `--diff` → `--yes` → verify. First-time login (`privy auth login`) needs a human for a browser CAPTCHA and an email code.
+
+## Start here
+
+- [README](https://raw.githubusercontent.com/awesamarth/privy-cli/main/README.md): install, login, examples, limits and FAQ
+- [Agent skill](https://raw.githubusercontent.com/awesamarth/privy-cli/main/skills/privy-cli/SKILL.md): how an AI agent should use the CLI safely
+- [Getting started](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/getting-started.md): agent workflow, input/output and consent
+
+## Guides
+
+- [Authentication](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/authentication.md): dashboard login, profiles, OS credential storage and session recovery
+- [App lifecycle](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/app-lifecycle.md): choose an account, create and configure a dev app, bind a folder, delete deliberately
+- [Login providers](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/providers.md): email, passkeys, wallets, Google, Apple, GitHub, Discord, X/Twitter, Telegram and own OAuth credentials
+- [Custom JWT authentication](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/jwt.md): bring your own auth with JWKS or certificates
+- [Security settings](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/security.md): allowed origins, redirects, CAPTCHA, account merging and verification keys
+- [Credentials and secrets](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/secrets.md): app API secrets to an env file, OS keychain, both or neither
+- [Webhooks](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/webhooks.md): endpoints, subscriptions, signing keys, delivery history and replay
+- [Policies and approvals](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/policies.md): wallet policies, rules and key quorums
+- [Users and wallets](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/resources.md): list, search, inspect and paginate users and wallets
+- [Integrations and Global Wallet](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/integrations.md): clients, domains, WalletConnect, smart wallets and cross-app wallets
+- [Accounts and analytics](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/accounts.md): dashboard members, invitations and app analytics
+- [Failure recovery](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/recovery.md): partial success, uncertain writes and verification limits
+
+## Optional
+
+- [npm package](https://www.npmjs.com/package/@awesamarth/privy-cli)
+- [Source code](https://github.com/awesamarth/privy-cli)
