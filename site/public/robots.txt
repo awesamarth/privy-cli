@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://privy-cli.awesamarth.dev/sitemap-index.xml

@@ -8,6 +8,8 @@ Install with `npm install -g @awesamarth/privy-cli` (Node.js 22.18+). Agents can
 
 ## Start here
 
+- [Docs site llms.txt](https://privy-cli.awesamarth.dev/llms.txt): the full, current index, with a Markdown copy of every page
+- [Docs site](https://privy-cli.awesamarth.dev): install, how-to pages, guides and a reference for every command
 - [README](https://raw.githubusercontent.com/awesamarth/privy-cli/main/README.md): install, login, examples, limits and FAQ
 - [Agent skill](https://raw.githubusercontent.com/awesamarth/privy-cli/main/skills/privy-cli/SKILL.md): how an AI agent should use the CLI safely
 - [Getting started](https://raw.githubusercontent.com/awesamarth/privy-cli/main/docs/user/getting-started.md): agent workflow, input/output and consent

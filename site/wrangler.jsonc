@@ -1,0 +1,13 @@
+{
+  // Static docs site for the unofficial Privy CLI, served from Cloudflare Workers static assets.
+  "name": "privy-cli-docs",
+  "compatibility_date": "2026-11-12",
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  },
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "privy-cli.awesamarth.dev", "custom_domain": true }]
+}

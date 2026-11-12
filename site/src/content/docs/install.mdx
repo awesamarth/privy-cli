@@ -1,0 +1,83 @@
+---
+title: Install Privy CLI and log in
+description: Install the unofficial Privy CLI with npm, Bun, pnpm or Yarn, log in to your Privy dashboard account and pick the app to work on.
+sidebar:
+  label: Install and log in
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+You need **Node.js 22.18 or later** and your OS credential store (macOS Keychain, Windows Credential Manager or Linux Secret Service). Bun is not required.
+
+## Install
+
+<Tabs syncKey="pkg">
+  <TabItem label="npm">
+```sh
+npm install -g @awesamarth/privy-cli
+```
+  </TabItem>
+  <TabItem label="bun">
+```sh
+bun install -g @awesamarth/privy-cli
+```
+  </TabItem>
+  <TabItem label="pnpm">
+```sh
+pnpm add -g @awesamarth/privy-cli
+```
+  </TabItem>
+  <TabItem label="yarn v1">
+```sh
+yarn global add @awesamarth/privy-cli
+```
+  </TabItem>
+</Tabs>
+
+Yarn 2 and later don't support global installs, so use npm, Bun or pnpm there. Check it worked:
+
+```sh
+privy --version
+privy doctor     # local checks only; no Privy API calls
+```
+
+## Log in
+
+```sh
+privy auth login
+```
+
+The CLI asks for your Privy dashboard email, opens a local page in your browser for the CAPTCHA, then asks for the email code at a hidden terminal prompt. Pasted characters won't show either. The session is saved in your OS keychain, not in a file.
+
+Next time your access expires, `privy auth login` renews the saved session without the browser or email code. To sign in again from scratch, use `privy auth login --replace`.
+
+```sh
+privy auth status --remote   # checks the session against Privy; never renews or changes anything
+```
+
+## Pick your account and app
+
+```sh
+privy accounts list
+privy apps list
+```
+
+Pass the app to any command with `--app APP_ID`, or bind the current folder once so you don't have to:
+
+```sh
+privy --app APP_ID project init --yes
+privy project show
+```
+
+`project init` writes a small `privy.json` with the profile and app ID. It never stores credentials.
+
+## Several logins
+
+Profiles keep separate sessions and app selections, for example one for work and one for side projects:
+
+```sh
+privy --profile work auth login
+privy --profile work apps list
+```
+
+See [Log in and sessions](/guides/authentication/) for session recovery and the optional browser-session import.

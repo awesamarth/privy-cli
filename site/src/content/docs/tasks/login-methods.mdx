@@ -1,0 +1,59 @@
+---
+title: Enable Google login (and other login methods) for a Privy app
+description: Turn on Google, Apple, GitHub, email, passkey or wallet login for your Privy app from the terminal, preview the change and verify it.
+sidebar:
+  label: Enable login methods
+  order: 2
+---
+
+Login methods are app settings, so they all go through one command: `privy apps config update`.
+
+## Preview against your live app
+
+```sh
+privy --app APP_ID apps config update --google-oauth true --diff
+```
+
+`--diff` reads the current config and shows exactly what would change, without writing anything.
+
+## Apply it
+
+```sh
+privy --app APP_ID apps config update --google-oauth true --yes
+```
+
+The CLI reads the config back afterwards and confirms the field changed. You can check it yourself too:
+
+```sh
+privy --app APP_ID apps config get --field google_oauth
+```
+
+## Other login methods
+
+Change several at once in the same command:
+
+```sh
+privy --app APP_ID apps config update \
+  --email-auth true --passkey-auth true --apple-oauth true --diff
+```
+
+| Login method | Flag |
+| --- | --- |
+| Email | `--email-auth` |
+| Passkeys | `--passkey-auth` |
+| Ethereum wallets (external) | `--wallet-auth` |
+| Solana wallets (external) | `--solana-wallet-auth` |
+| Google | `--google-oauth` |
+| Apple | `--apple-oauth` |
+| GitHub | `--github-oauth` |
+| Discord | `--discord-oauth` |
+| X (Twitter) | `--twitter-oauth` |
+| LinkedIn, TikTok, Line, Twitch | `--linkedin-oauth`, `--tiktok-oauth`, `--line-oauth`, `--twitch-oauth` |
+
+Run `privy apps config update --help` for the full list. Use `false` to turn a method off.
+
+## Do I need my own OAuth credentials?
+
+Not always. Google and Apple work with Privy's shared setup, and your own credentials are optional. Spotify, Instagram and Telegram need your own configuration first. See [Login methods](/guides/providers/) for which provider needs what, and `privy providers` to manage your own credentials.
+
+Turning a method on doesn't add it to your frontend or prove that sign-in works. Test the login in your app afterwards.

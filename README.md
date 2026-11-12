@@ -4,6 +4,8 @@
 
 [![npm](https://img.shields.io/npm/v/@awesamarth/privy-cli)](https://www.npmjs.com/package/@awesamarth/privy-cli) [![license](https://img.shields.io/npm/l/@awesamarth/privy-cli)](LICENSE)
 
+**Docs:** [privy-cli.awesamarth.dev](https://privy-cli.awesamarth.dev)
+
 ```sh
 npm install -g @awesamarth/privy-cli
 ```

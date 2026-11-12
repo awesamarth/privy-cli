@@ -1,0 +1,57 @@
+---
+import wordmark from '../assets/privy-wordmark.svg?raw';
+---
+
+<a href="/" class="site-title" aria-label="Privy CLI (Unofficial), home">
+  <span class="wordmark" set:html={wordmark} />
+  <span class="cli">CLI</span>
+  <span class="badge">Unofficial</span>
+</a>
+
+<style>
+  /*
+   * Optical alignment with the wordmark (viewBox 108 x 24):
+   * lowercase x-height runs from y=0.5 to the baseline at y=18.15; descenders and the
+   * logo shadow hang below. "CLI" shares that baseline and its cap height matches the
+   * x-height (Geist cap height is about 0.71em).
+   */
+  .site-title {
+    --w: 5.25rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    color: var(--sl-color-white);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .wordmark {
+    position: relative;
+    display: block;
+    width: var(--w);
+    height: calc(var(--w) * 18.15 / 108);
+    overflow: visible;
+  }
+  .wordmark :global(svg) {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: var(--w);
+    height: auto;
+  }
+  .cli {
+    font-size: calc(var(--w) * 17.65 / 108 / 0.71);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .badge {
+    align-self: center;
+    margin-left: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    line-height: 1;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    color: var(--sl-color-gray-3);
+  }
+</style>

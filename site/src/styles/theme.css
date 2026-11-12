@@ -1,0 +1,111 @@
+/* Minimal theme following Privy's public design language. Not an official Privy property. */
+
+:root {
+  --sl-font: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --sl-font-mono: 'Fragment Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sl-content-width: 48rem;
+
+  /* Dark */
+  --sl-color-accent-low: #1e1a52;
+  --sl-color-accent: #7f75ff;
+  --sl-color-accent-high: #d6d3ff;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #ececf3;
+  --sl-color-gray-2: #c4c5d4;
+  --sl-color-gray-3: #8e8fa3;
+  --sl-color-gray-4: #5d5e70;
+  --sl-color-gray-5: #34353f;
+  --sl-color-gray-6: #1f2029;
+  --sl-color-black: #0b0b12;
+
+  --pc-card: #14141d;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #ebe9ff;
+  --sl-color-accent: #5c4fff;
+  --sl-color-accent-high: #2f27a3;
+  --sl-color-white: #010110;
+  --sl-color-gray-1: #1c1c2b;
+  --sl-color-gray-2: #3a3b4a;
+  --sl-color-gray-3: #70707d;
+  --sl-color-gray-4: #a1a2b3;
+  --sl-color-gray-5: #d4d5e2;
+  --sl-color-gray-6: #e2e3f0;
+  --sl-color-gray-7: #f8f9fc;
+  --sl-color-black: #ffffff;
+
+  --pc-card: #f8f9fc;
+}
+
+/* Headings: tight, heavy, like Privy's display type. */
+h1,
+h2,
+h3,
+.sl-markdown-content :is(h1, h2, h3, h4) {
+  letter-spacing: -0.03em;
+  font-weight: 650;
+}
+
+h1#_top {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.1;
+}
+
+.sl-markdown-content {
+  line-height: 1.7;
+}
+
+/* Pill buttons. */
+.sl-link-button,
+.pc-button {
+  border-radius: 999px !important;
+  font-weight: 500;
+}
+
+/* Quieter header border. */
+header.header {
+  border-bottom-color: var(--sl-color-gray-6);
+}
+
+/* Cards: monochrome and quiet. */
+.card {
+  --sl-card-border: var(--sl-color-gray-6);
+  --sl-card-bg: var(--pc-card);
+  border-color: var(--sl-color-gray-6);
+  background-color: var(--pc-card);
+  border-radius: 0.875rem;
+}
+.card .icon {
+  color: var(--sl-color-white);
+  border-color: var(--sl-color-gray-5);
+  background: transparent;
+}
+.sl-link-card {
+  border-radius: 0.875rem;
+  border-color: var(--sl-color-gray-6);
+}
+
+/* Sidebar: subtle active item instead of a solid accent block. */
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+  background-color: var(--sl-color-accent-low);
+  color: var(--sl-color-accent-high);
+  font-weight: 550;
+}
+
+/* Monochrome header icons. */
+.social-icons a {
+  color: var(--sl-color-gray-2);
+}
+.social-icons a:hover {
+  color: var(--sl-color-white);
+}
+
+/* Nested sidebar groups (command reference): quieter than top-level groups. */
+.sidebar-content ul ul .group-label .large {
+  font-size: var(--sl-text-sm);
+  font-weight: 500;
+  color: var(--sl-color-gray-2);
+}

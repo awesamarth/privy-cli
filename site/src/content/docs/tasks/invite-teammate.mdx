@@ -1,0 +1,39 @@
+---
+title: Invite a teammate to your Privy dashboard
+description: List members of your Privy account, invite a teammate with a viewer, developer, billing or admin role, and revoke pending invitations from the terminal.
+sidebar:
+  label: Invite a teammate
+  order: 6
+---
+
+Dashboard members belong to the whole account (workspace), not a single app, so these commands take `--account`.
+
+```sh
+privy accounts list
+privy accounts members list --account ACCOUNT_ID
+```
+
+## Send an invitation
+
+Roles are `viewer`, `developer`, `billing` and `admin`. Because this changes access to the whole account, you also confirm the account's exact name:
+
+```sh
+privy accounts invitations create --account ACCOUNT_ID \
+  --email-address teammate@example.com --role developer --dry-run
+
+privy accounts invitations create --account ACCOUNT_ID \
+  --email-address teammate@example.com --role developer \
+  --confirm-account "My Account" --yes
+```
+
+Creating an invitation can send an email to that address.
+
+## Pending invitations
+
+```sh
+privy accounts invitations list --account ACCOUNT_ID
+privy accounts invitations revoke --account ACCOUNT_ID \
+  --email-address teammate@example.com --confirm-account "My Account" --yes
+```
+
+You can also change roles and remove members with `privy accounts members update` and `privy accounts members remove`. The CLI won't remove the last admin. More in [Accounts and analytics](/guides/accounts/).

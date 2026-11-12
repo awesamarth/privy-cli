@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.astro/
+# Generated from ../docs/user by scripts/sync-docs.ts
+src/content/docs/guides/
+# Generated from the CLI by scripts/gen-reference.ts
+src/content/docs/reference/

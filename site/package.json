@@ -1,0 +1,21 @@
+{
+  "name": "privy-cli-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "bun scripts/sync-docs.ts && bun scripts/gen-reference.ts",
+    "dev": "bun run sync && astro dev",
+    "build": "bun run sync && astro build",
+    "preview": "astro preview",
+    "deploy": "bun run build && wrangler deploy"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.42.11",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource/fragment-mono": "^5.3.0",
+    "astro": "^7.4.11"
+  },
+  "devDependencies": {
+    "wrangler": "^4.161.0"
+  }
+}

@@ -1,0 +1,156 @@
+---
+import { Code, TabItem, Tabs } from '@astrojs/starlight/components';
+
+const installs = [
+  ['npm', 'npm install -g @awesamarth/privy-cli'],
+  ['bun', 'bun install -g @awesamarth/privy-cli'],
+  ['pnpm', 'pnpm add -g @awesamarth/privy-cli'],
+  ['yarn v1', 'yarn global add @awesamarth/privy-cli'],
+];
+
+const { hero, title } = Astro.locals.starlightRoute.entry.data;
+---
+
+<section class="hero">
+  <div class="copy">
+    <p class="eyebrow">Inspired by Cloudflare's cf CLI · Unofficial</p>
+    <h1 id="_top">{hero?.title ?? title}</h1>
+    {hero?.tagline && <p class="tagline" set:html={hero.tagline} />}
+    <div class="install">
+      <Tabs syncKey="pkg">
+        {installs.map(([label, code]) => (
+          <TabItem label={label}>
+            <Code code={code} lang="sh" frame="none" />
+          </TabItem>
+        ))}
+      </Tabs>
+    </div>
+    <div class="actions">
+      <a class="pc-button primary" href="/install/">Get started</a>
+      <a class="pc-button secondary" href="https://github.com/awesamarth/privy-cli">GitHub</a>
+    </div>
+  </div>
+
+  <div class="terminal" aria-label="Example Privy CLI session">
+    <div class="bar"><span></span><span></span><span></span></div>
+    <pre><code><span class="c"># find the right command</span>
+<span class="p">$</span> privy cli search "enable google login"
+
+<span class="c"># preview the change against your live app</span>
+<span class="p">$</span> privy --app APP_ID apps config update \
+    --google-oauth true --diff
+
+<span class="c"># apply it, then the CLI reads it back</span>
+<span class="p">$</span> privy --app APP_ID apps config update \
+    --google-oauth true --yes
+
+<span class="c"># inspect what's there</span>
+<span class="p">$</span> privy --app APP_ID users list
+<span class="p">$</span> privy --app APP_ID webhooks list</code></pre>
+  </div>
+</section>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 3rem;
+    align-items: center;
+    padding-block: 3rem 2rem;
+  }
+  @media (max-width: 60rem) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2rem;
+      padding-block: 1.5rem 1rem;
+    }
+  }
+  .eyebrow {
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+    margin: 0 0 1rem;
+  }
+  h1 {
+    font-size: clamp(2.5rem, 5.5vw, 4.25rem);
+    line-height: 1.02;
+    letter-spacing: -0.045em;
+    font-weight: 650;
+    color: var(--sl-color-white);
+    margin: 0;
+  }
+  .tagline {
+    font-size: var(--sl-text-lg);
+    line-height: 1.55;
+    color: var(--sl-color-gray-3);
+    margin: 1.25rem 0 1.5rem;
+    max-width: 34rem;
+  }
+  .install {
+    max-width: 30rem;
+  }
+  .install :global(starlight-tabs) {
+    margin: 0;
+  }
+  .install :global(.tablist-wrapper) {
+    margin-bottom: 0.5rem;
+  }
+  .install :global(.expressive-code) {
+    margin-top: 0;
+  }
+  .actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .pc-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6rem 1.35rem;
+    text-decoration: none;
+    font-size: var(--sl-text-sm);
+    border: 1px solid var(--sl-color-white);
+  }
+  .primary {
+    background: var(--sl-color-white);
+    color: var(--sl-color-black);
+  }
+  .secondary {
+    color: var(--sl-color-white);
+  }
+  .terminal {
+    border: 1px solid var(--sl-color-gray-6);
+    border-radius: 1rem;
+    background: var(--pc-card);
+    overflow: hidden;
+  }
+  .bar {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--sl-color-gray-6);
+  }
+  .bar span {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--sl-color-gray-5);
+  }
+  pre {
+    margin: 0;
+    padding: 1.25rem 1.5rem 1.5rem;
+    font-family: var(--sl-font-mono);
+    font-size: 0.82rem;
+    line-height: 1.75;
+    color: var(--sl-color-gray-1);
+    overflow-x: auto;
+    background: transparent;
+    border: 0;
+  }
+  .c {
+    color: var(--sl-color-gray-3);
+  }
+  .p {
+    color: var(--sl-color-accent);
+  }
+</style>

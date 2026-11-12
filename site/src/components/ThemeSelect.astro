@@ -1,0 +1,70 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+---
+
+<privy-theme-toggle>
+  <button type="button" class="toggle" aria-label="Switch to dark theme" title="Switch theme">
+    <Icon name="moon" class="moon" size="1.1rem" />
+    <Icon name="sun" class="sun" size="1.1rem" />
+  </button>
+</privy-theme-toggle>
+
+<style>
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--sl-color-gray-6);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--sl-color-gray-2);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .toggle:hover,
+  .toggle:focus-visible {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+  }
+  :global([data-theme='dark']) .toggle {
+    border-color: var(--sl-color-gray-5);
+  }
+  .sun {
+    display: none;
+  }
+  :global([data-theme='dark']) .moon {
+    display: none;
+  }
+  :global([data-theme='dark']) .sun {
+    display: block;
+  }
+</style>
+
+<script>
+  const key = 'starlight-theme';
+
+  class PrivyThemeToggle extends HTMLElement {
+    constructor() {
+      super();
+      const button = this.querySelector('button');
+      const sync = () => {
+        const dark = document.documentElement.dataset.theme === 'dark';
+        button?.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+      };
+      sync();
+      button?.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        try {
+          localStorage.setItem(key, next);
+        } catch {}
+        document.querySelectorAll('privy-theme-toggle button').forEach(b =>
+          b.setAttribute('aria-label', next === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'),
+        );
+      });
+    }
+  }
+  customElements.define('privy-theme-toggle', PrivyThemeToggle);
+</script>

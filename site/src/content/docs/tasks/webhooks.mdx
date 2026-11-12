@@ -1,0 +1,52 @@
+---
+title: Set up Privy webhooks from the terminal
+description: Add a Privy webhook endpoint, choose events, save the signing key to your keychain and check delivery history with the unofficial Privy CLI.
+sidebar:
+  label: Set up webhooks
+  order: 3
+---
+
+You need an HTTPS endpoint you control. Webhooks can contain user data, so don't point them at a public test receiver.
+
+## Add the endpoint
+
+```sh
+privy --app APP_ID webhooks create --url https://api.example.com/privy --dry-run
+privy --app APP_ID webhooks create --url https://api.example.com/privy --yes
+privy --app APP_ID webhooks list
+```
+
+An app can have up to five endpoints.
+
+## Save the signing key
+
+Creating an endpoint doesn't fetch its signing key. This saves it straight to your OS keychain without printing it:
+
+```sh
+privy --app APP_ID webhooks signing-key save ENDPOINT_ID --yes
+```
+
+Your server uses that key to verify each webhook's signature.
+
+## Choose events
+
+Subscriptions apply to **every endpoint** in the app, and the list you pass replaces the current one, so include everything you want to keep:
+
+```sh
+privy --app APP_ID webhooks subscriptions get
+privy --app APP_ID webhooks subscriptions update --subscriptions '["user.created"]' --diff
+privy --app APP_ID webhooks subscriptions update --subscriptions '["user.created"]' --yes
+```
+
+Privy validates the event names.
+
+## Test and check delivery
+
+```sh
+privy --app APP_ID webhooks test ENDPOINT_ID --confirm-url https://api.example.com/privy --yes
+privy --app APP_ID webhooks history list --endpoint-id ENDPOINT_ID
+```
+
+A successful `test` only means Privy accepted the request. Check the history and your server's logs to confirm the webhook arrived and its signature verified. The CLI never resends on its own, so look at the history before sending again.
+
+More in the [Webhooks guide](/guides/webhooks/).

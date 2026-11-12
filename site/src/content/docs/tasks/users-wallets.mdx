@@ -1,0 +1,43 @@
+---
+title: Find and export Privy users and wallets from the terminal
+description: Search Privy app users by email, inspect a user's linked accounts and wallets, list wallets by chain and export users to CSV.
+sidebar:
+  label: Find users and wallets
+  order: 5
+---
+
+## Search users
+
+```sh
+privy --app APP_ID users list --query alice@example.com
+privy --app APP_ID users get USER_ID
+```
+
+`users list` returns a short summary per user (ID, name, email, linked account types, wallet count). Add `--full` for complete records, or use `users get` for one user.
+
+## Wallets
+
+```sh
+privy --app APP_ID wallets list --chain-type ethereum
+privy --app APP_ID wallets get WALLET_ID --include-balance true
+```
+
+## More than one page
+
+Lists return 20 records by default (up to 100 with `--limit`). To follow pages, use a bounded `--all`:
+
+```sh
+privy --app APP_ID users list --all --max-pages 5
+```
+
+Check `has_more` and `truncated` in the output to see whether there's more.
+
+## Export to CSV
+
+```sh
+privy --app APP_ID users export --output users.csv --yes
+```
+
+The file is created private and never overwrites an existing file.
+
+Output can include personal data, so be careful where you paste it. More in [Users and wallets](/guides/resources/).

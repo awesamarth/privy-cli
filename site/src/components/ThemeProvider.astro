@@ -1,0 +1,12 @@
+---
+// Light by default (Privy's own sites are light). Dark only if the reader chose it.
+---
+
+{/* Inlined to avoid a flash of the wrong theme. */}
+<script is:inline>
+  window.StarlightThemeProvider = (() => {
+    const stored = typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+    document.documentElement.dataset.theme = stored === 'dark' ? 'dark' : 'light';
+    return { updatePickers() {} };
+  })();
+</script>

@@ -1,0 +1,78 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+
+const features = [
+  { icon: 'setting', title: 'Apps and login methods', text: 'Create dev apps, toggle email, passkey, wallet and OAuth logins, set up custom JWT auth and security settings.', href: '/guides/providers/' },
+  { icon: 'open-book', title: 'Users and wallets', text: 'Search, inspect and paginate app users and wallets, with summaries by default and full rows on request.', href: '/guides/resources/' },
+  { icon: 'approve-check', title: 'Policies and key quorums', text: 'Create and edit wallet policies and rules, and inspect quorums and approvals.', href: '/guides/policies/' },
+  { icon: 'rocket', title: 'Webhooks', text: 'Add endpoints and subscriptions, store signing keys safely and check delivery history.', href: '/guides/webhooks/' },
+  { icon: 'seti:lock', title: 'Credentials and secrets', text: 'Create app API secrets and save them to an env file, your OS keychain, both or neither.', href: '/guides/secrets/' },
+  { icon: 'information', title: 'Accounts and analytics', text: 'Manage dashboard members and invitations, and read app analytics as JSON.', href: '/guides/accounts/' },
+] as const;
+---
+
+<div class="features not-content">
+  {features.map(f => (
+    <a class="feature" href={f.href}>
+      <Icon name={f.icon} size="1.25rem" class="icon" />
+      <h3>{f.title}</h3>
+      <p>{f.text}</p>
+    </a>
+  ))}
+</div>
+
+<style>
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 60rem) {
+    .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 36rem) {
+    .features { grid-template-columns: minmax(0, 1fr); }
+  }
+  .feature {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--sl-color-gray-6);
+    border-radius: 0.875rem;
+    background: var(--sl-color-black);
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  }
+  .feature:hover,
+  .feature:focus-visible {
+    transform: translateY(-2px) scale(1.02);
+    border-color: var(--sl-color-gray-5);
+    background: var(--pc-card);
+    box-shadow: 0 12px 28px -12px rgb(1 1 16 / 0.18);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .feature { transition: none; }
+    .feature:hover, .feature:focus-visible { transform: none; }
+  }
+  .feature :global(.icon) {
+    color: var(--sl-color-accent);
+    margin-bottom: 0.5rem;
+  }
+  h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--sl-color-white);
+  }
+  p {
+    margin: 0;
+    font-size: var(--sl-text-sm);
+    line-height: 1.6;
+    color: var(--sl-color-gray-3);
+  }
+</style>

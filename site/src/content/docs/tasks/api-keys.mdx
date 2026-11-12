@@ -1,0 +1,35 @@
+---
+title: Create a Privy API key (app secret) from the terminal
+description: Generate a read-only or full-access Privy app secret, save it to a server env file or your OS keychain, and revoke old keys.
+sidebar:
+  label: Create an API key
+  order: 4
+---
+
+Your server uses the app ID and an app secret to call Privy's API. You can create extra secrets, for example a read-only one for analytics, and revoke them separately.
+
+## Create one
+
+```sh
+privy --app APP_ID credentials create --access-mode read_only \
+  --secret-store env --env-output .env.local --dry-run
+
+privy --app APP_ID credentials create --access-mode read_only \
+  --secret-store env --env-output .env.local --yes
+```
+
+- `--access-mode` is `read_only` or `full`, and can't be changed later.
+- `--secret-store` is `env`, `keychain`, `both` or `none`. With `env` or `both`, the secret is written to `--env-output` as `PRIVY_APP_SECRET` (change it with `--env-key`). The file must be git-ignored or untracked, and existing values are only replaced with `--overwrite-env`.
+
+The secret is never printed to the terminal.
+
+## List and revoke
+
+```sh
+privy --app APP_ID credentials list
+privy --app APP_ID credentials delete CREDENTIAL_ID --yes
+```
+
+Deleting a credential revokes it on Privy and clears the copy in your keychain. An env file you wrote it to stays as it is, so remove the value there yourself.
+
+Keep app secrets on your server only. See [Credentials and secrets](/guides/secrets/) for rotation and recovery.

@@ -1,0 +1,57 @@
+---
+title: Create a Privy app from the command line
+description: Create a new Privy development app from the terminal, save its app secret to an env file or your keychain, and bind your project folder to it.
+sidebar:
+  label: Create an app
+  order: 1
+---
+
+Creating a Privy app from the terminal takes two commands: find your account, then create the app.
+
+```sh
+privy accounts list
+```
+
+Copy the `id` of the account (workspace) the app should live in.
+
+## Preview, then create
+
+```sh
+privy apps create --account ACCOUNT_ID --name my-app \
+  --secret-store env --env-output .env.local --dry-run
+
+privy apps create --account ACCOUNT_ID --name my-app \
+  --secret-store env --env-output .env.local --yes
+```
+
+Privy generates an app secret when the app is created, and the CLI makes you choose where it goes:
+
+| `--secret-store` | Where the secret goes |
+| --- | --- |
+| `env` | A server env file (`--env-output`), as `PRIVY_APP_SECRET` unless you set `--env-key` |
+| `keychain` | Your OS keychain, for use with other CLI commands |
+| `both` | Both of the above |
+| `none` | Nowhere. You'll need to create a new API key later |
+
+The env file must be git-ignored or untracked, and an existing variable is only replaced with `--overwrite-env`. The secret is never printed.
+
+## Point your project at it
+
+Creating an app doesn't select it. Use the `id` from the output:
+
+```sh
+privy --app APP_ID project init --yes
+privy project show
+```
+
+Now every `privy` command run in this folder targets the new app. Next, [turn on login methods](/tasks/login-methods/).
+
+## Deleting a test app
+
+Only development apps can be deleted, and you have to type the exact name:
+
+```sh
+privy --app APP_ID apps delete --confirm-name my-app --yes
+```
+
+More in [Apps and project context](/guides/app-lifecycle/) and the [`apps create` reference](/reference/apps/create/).

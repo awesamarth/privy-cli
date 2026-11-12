@@ -1,0 +1,52 @@
+---
+title: Manage Privy from your agent or terminal
+description: "Manage your Privy account and apps from your agent or terminal. Inspired by Cloudflare's cf CLI (Unofficial)"
+template: splash
+next: false
+prev: false
+hero:
+  title: Manage Privy from your agent or terminal.
+  tagline: Apps, login methods, users, wallets, policies, webhooks and more. Everything you'd click through in the Privy dashboard, as one discoverable command line.
+---
+
+import { CardGrid, LinkCard, Steps } from '@astrojs/starlight/components';
+import Features from '../../components/Features.astro';
+
+## What's covered
+
+<Features />
+
+## Designed for agents
+
+Every command works the same way:
+
+<Steps>
+
+1. **Discover**: `privy cli search "your task"` finds the right command.
+2. **Schema**: `privy schema <command>` shows inputs, required confirmations and how the result is verified.
+3. **Preview**: `--dry-run` validates offline, and `--diff` shows the change against your live app without writing.
+4. **Execute**: `--yes` plus any confirmations the command needs. Nothing changes without them.
+5. **Verify**: the CLI reads the change back and tells you what it confirmed.
+
+</Steps>
+
+Output is JSON by default, guides work offline with `privy docs`, and secrets only ever go through stdin.
+
+## Use it with your agent
+
+Install the skill so Claude Code, Codex, Cursor and other agents know when and how to use the CLI:
+
+```sh
+npx skills add awesamarth/privy-cli
+```
+
+Then ask: *"Use the Privy CLI to create an app called my-new-test and enable Google login."* You'll only need to log in yourself.
+
+<CardGrid>
+  <LinkCard title="Install and log in" href="/install/" description="Install with npm, Bun, pnpm or Yarn and connect your Privy account." />
+  <LinkCard title="Use it with your agent" href="/agents/" description="What the agent does, and what you still do yourself." />
+</CardGrid>
+
+## Not the agent-wallet CLI
+
+Privy's official [`@privy-io/agent-wallet-cli`](https://www.npmjs.com/package/@privy-io/agent-wallet-cli) gives an AI agent its own wallet to fund and transact with. This CLI manages your Privy **developer account and apps**. It never signs transactions or moves funds.

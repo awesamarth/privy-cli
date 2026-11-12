@@ -1,0 +1,40 @@
+---
+title: Use Privy CLI with Claude Code, Codex or Cursor
+description: Let an AI coding agent create and configure your Privy apps with the unofficial Privy CLI and its agent skill.
+sidebar:
+  label: Use it with your agent
+---
+
+The CLI is built so a coding agent can use it without guessing: it outputs JSON, explains every command through `privy cli search` and `privy schema`, previews changes before making them and reads them back afterwards.
+
+## Install the skill
+
+```sh
+npx skills add awesamarth/privy-cli
+```
+
+The skill tells Claude Code, Codex, Cursor and other agents when to reach for the CLI, how to check that you're logged in, and to start from `privy cli search`. It's [short and readable](https://github.com/awesamarth/privy-cli/blob/main/skills/privy-cli/SKILL.md).
+
+Without the skill, name the tool in your request so the agent knows to look for it:
+
+> Use the Privy CLI to create an app called my-new-test and enable Google login.
+
+## What you still do yourself
+
+- **Log in.** Run `privy auth login` in your own terminal. It needs a browser CAPTCHA and an email code, and the agent should never ask you for the code in chat. After that, the agent can renew the session on its own.
+- **Decide where secrets go.** When an app or API key is created, you choose whether the secret goes to an env file, your OS keychain, both or neither.
+- **Approve anything big.** Deleting apps, account-wide changes and production apps need extra confirmation flags, and the agent should only use them when you've asked for that change.
+
+## What the agent does
+
+1. Finds the command: `privy cli search "enable google login"`
+2. Reads the contract: `privy schema apps config update`
+3. Previews: `--dry-run` offline, or `--diff` against your live app
+4. Runs it with `--yes`
+5. Reports what the CLI verified, and anything it couldn't
+
+If a change fails or times out, the CLI never retries on its own, so the agent checks the current state before trying again.
+
+## What it won't do
+
+The CLI manages your Privy **developer account and apps**. It doesn't sign transactions, move funds, export private keys or touch billing. For an agent that needs its own wallet, Privy has a separate, official [agent wallet CLI](https://www.npmjs.com/package/@privy-io/agent-wallet-cli).
