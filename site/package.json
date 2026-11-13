@@ -7,7 +7,7 @@
     "dev": "bun run sync && astro dev",
     "build": "bun run sync && astro build",
     "preview": "astro preview",
-    "deploy": "bun run build && wrangler deploy"
+    "deploy": "bun run build && wrangler deploy && bun scripts/indexnow.ts"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.42.11",
