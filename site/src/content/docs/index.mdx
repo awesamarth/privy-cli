@@ -2,14 +2,18 @@
 title: Privy CLI
 head:
   - tag: title
-    content: "Privy CLI (Unofficial): manage Privy from your agent or terminal"
+    content: "Privy CLI: manage Privy apps, users and wallets from your terminal or agent"
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: '{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Privy CLI?", "acceptedAnswer": {"@type": "Answer", "text": "Privy CLI is an unofficial command-line tool for managing Privy accounts and apps. It covers what you''d otherwise click through in the Privy dashboard: creating apps, login methods and OAuth providers, users, wallets, policies, webhooks, API credentials, team members and analytics. Output is JSON, so AI agents and scripts can use it too."}}, {"@type": "Question", "name": "How do I install Privy CLI?", "acceptedAnswer": {"@type": "Answer", "text": "Run npm install -g @awesamarth/privy-cli, or the Bun, pnpm or Yarn equivalent. It needs Node.js 22.18 or later. Then run privy auth login: you complete a browser CAPTCHA and type the email code Privy sends you. The session is stored in your OS credential store, such as the macOS Keychain."}}, {"@type": "Question", "name": "Is Privy CLI official?", "acceptedAnswer": {"@type": "Answer", "text": "No. Privy CLI is an independent, open-source (MIT) project, not an official Privy product. It uses the same endpoints as the Privy dashboard, most of which are undocumented, so a dashboard change can occasionally break a command until the CLI is updated."}}, {"@type": "Question", "name": "How is Privy CLI different from Privy''s agent wallet CLI?", "acceptedAnswer": {"@type": "Answer", "text": "Privy''s official @privy-io/agent-wallet-cli gives an AI agent its own wallet to fund and transact with. Privy CLI manages your Privy developer account and apps instead: configuration, users, policies, webhooks and so on. It never signs transactions or moves funds."}}, {"@type": "Question", "name": "Can AI agents use Privy CLI?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, it''s built for them. Agents find commands with privy cli search, read their inputs with privy schema, preview changes with --dry-run or --diff, and apply them with --yes. Install the skill with npx skills add awesamarth/privy-cli. A human only needs to complete login."}}]}'
 description: "Manage your Privy account and apps from your agent or terminal. Inspired by Cloudflare's cf CLI (Unofficial)"
 template: splash
 next: false
 prev: false
 hero:
-  title: Manage Privy from your agent or terminal.
-  tagline: Apps, login methods, users, wallets, policies, webhooks and more. Everything you'd click through in the Privy dashboard, as one discoverable command line.
+  title: Privy CLI
+  tagline: Privy CLI is an unofficial command-line tool for managing Privy accounts and apps. Apps, login methods, users, wallets, policies, webhooks and more, everything you'd click through in the Privy dashboard, as one discoverable command line.
 ---
 
 import { CardGrid, LinkCard, Steps } from '@astrojs/starlight/components';
@@ -50,6 +54,24 @@ Then ask: *"Use the Privy CLI to create an app called my-new-test and enable Goo
   <LinkCard title="Use it with your agent" href="/agents/" description="What the agent does, and what you still do yourself." />
 </CardGrid>
 
-## Not the agent-wallet CLI
+## FAQ
 
-Privy's official [`@privy-io/agent-wallet-cli`](https://www.npmjs.com/package/@privy-io/agent-wallet-cli) gives an AI agent its own wallet to fund and transact with. This CLI manages your Privy **developer account and apps**. It never signs transactions or moves funds.
+### What is Privy CLI?
+
+Privy CLI is an unofficial command-line tool for managing Privy accounts and apps. It covers what you'd otherwise click through in the Privy dashboard: creating apps, login methods and OAuth providers, users, wallets, policies, webhooks, API credentials, team members and analytics. Output is JSON, so AI agents and scripts can use it too.
+
+### How do I install Privy CLI?
+
+Run `npm install -g @awesamarth/privy-cli`, or the Bun, pnpm or Yarn equivalent. It needs Node.js 22.18 or later. Then run `privy auth login`: you complete a browser CAPTCHA and type the email code Privy sends you. The session is stored in your OS credential store, such as the macOS Keychain.
+
+### Is Privy CLI official?
+
+No. Privy CLI is an independent, open-source (MIT) project, not an official Privy product. It uses the same endpoints as the Privy dashboard, most of which are undocumented, so a dashboard change can occasionally break a command until the CLI is updated.
+
+### How is Privy CLI different from Privy's agent wallet CLI?
+
+Privy's official [`@privy-io/agent-wallet-cli`](https://www.npmjs.com/package/@privy-io/agent-wallet-cli) gives an AI agent its own wallet to fund and transact with. Privy CLI manages your Privy developer account and apps instead: configuration, users, policies, webhooks and so on. It never signs transactions or moves funds.
+
+### Can AI agents use Privy CLI?
+
+Yes, it's built for them. Agents find commands with `privy cli search`, read their inputs with `privy schema`, preview changes with `--dry-run` or `--diff`, and apply them with `--yes`. Install the skill with `npx skills add awesamarth/privy-cli`. A human only needs to complete login.

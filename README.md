@@ -4,6 +4,8 @@
 
 [![npm](https://img.shields.io/npm/v/@awesamarth/privy-cli)](https://www.npmjs.com/package/@awesamarth/privy-cli) [![license](https://img.shields.io/npm/l/@awesamarth/privy-cli)](LICENSE)
 
+Privy CLI is an unofficial command-line tool for managing Privy accounts and apps: login methods, users, wallets, policies, webhooks and more.
+
 **Docs:** [privy-cli.awesamarth.dev](https://privy-cli.awesamarth.dev)
 
 ```sh

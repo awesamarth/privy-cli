@@ -8,8 +8,8 @@ const { version } = JSON.parse(readFileSync(new URL('../package.json', import.me
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'Privy CLI (Unofficial)',
-  alternateName: '@awesamarth/privy-cli',
+  name: 'Privy CLI',
+  alternateName: ['@awesamarth/privy-cli', 'privy-cli'],
   description: "Manage your Privy account and apps from your agent or terminal. Inspired by Cloudflare's cf CLI. Unofficial; not affiliated with or endorsed by Privy.",
   applicationCategory: 'DeveloperApplication',
   applicationSubCategory: 'Command-line tool',

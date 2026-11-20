@@ -15,6 +15,7 @@ const { hero, title } = Astro.locals.starlightRoute.entry.data;
   <div class="copy">
     <p class="eyebrow">Inspired by Cloudflare's cf CLI · Unofficial</p>
     <h1 id="_top">{hero?.title ?? title}</h1>
+    <p class="subtitle">Manage Privy from your agent or terminal.</p>
     {hero?.tagline && <p class="tagline" set:html={hero.tagline} />}
     <div class="install">
       <Tabs syncKey="pkg">
@@ -77,6 +78,14 @@ const { hero, title } = Astro.locals.starlightRoute.entry.data;
     font-weight: 650;
     color: var(--sl-color-white);
     margin: 0;
+  }
+  .subtitle {
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 550;
+    color: var(--sl-color-gray-2);
+    margin: 0.75rem 0 0;
   }
   .tagline {
     font-size: var(--sl-text-lg);
