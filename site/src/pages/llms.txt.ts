@@ -15,7 +15,7 @@ export const GET: APIRoute = async () => {
 
   const body = `# Privy CLI
 
-> Manage your Privy account and apps from your agent or terminal. Inspired by Cloudflare's cf CLI (Unofficial). The \`privy\` command (npm: @awesamarth/privy-cli) creates and configures Privy apps, toggles login methods, and manages users, wallets, policies, webhooks, API credentials, integrations, dashboard members and analytics. JSON output, explicit mutations, offline docs and schemas.
+> Privy CLI is an unofficial command-line tool for managing Privy accounts and apps: login methods, users, wallets, policies, webhooks and more. Manage your Privy account and apps from your agent or terminal. Inspired by Cloudflare's cf CLI (Unofficial). The \`privy\` command (npm: @awesamarth/privy-cli) creates and configures Privy apps, toggles login methods, and manages users, wallets, policies, webhooks, API credentials, integrations, dashboard members and analytics. JSON output, explicit mutations, offline docs and schemas.
 
 Not affiliated with Privy. It is different from Privy's official \`@privy-io/agent-wallet-cli\`, which gives agents wallets for funding and transactions; this CLI manages the developer dashboard and never signs transactions.
 
